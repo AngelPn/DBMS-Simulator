@@ -9,7 +9,7 @@ CC = gcc
 #compile options
 CFLAGS = -I$(INCLUDE)
 LIBS = $(LDIR)/BF_64.a
-OBJS = $(SRC)/main_example_BF.o
+OBJS = $(SRC)/main.o $(SRC)/HP.o
 
 EXEC = ex
 
