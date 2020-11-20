@@ -11,25 +11,26 @@ int HP_CreateFile(char *fileName, char attrType, char *attrName, int attrLength)
 		BF_PrintError("Error creating file");
 		exit(EXIT_FAILURE);
 	}
-    int fileDesk;
-    if (fileDesk = BF_OpenFile(fileName) < 0){
+    int fileDesc;
+    if (fileDesc = BF_OpenFile(fileName) < 0){
         BF_PrintError("Error opening file");
         exit(EXIT_FAILURE);
     }
-    if (BF_AllocateBlock(fileDesk) < 0){
+    if (BF_AllocateBlock(fileDesc) < 0){
         BF_PrintError("Error allocating block");
         exit(EXIT_FAILURE);
     }
     void *block;
-    if (BF_ReadBlock(fileDesk, 0, &block) < 0){
+    if (BF_ReadBlock(fileDesc, 0, &block) < 0){
         BF_PrintError("Error reading block");
         exit(EXIT_FAILURE);
     }
-    HP_info info = {.fileDesc = fileDesk,
+    HP_info info = {.fileDesc = fileDesc,
                     .attrType = attrType, 
-                    .attrName = attrName,
+                    .attrName = malloc(strlen(attrName)+1),
                     .attrLength = attrLength
                     };
+    strcpy(info.attrName, attrName);
     if (memcpy(block, &info, sizeof(HP_info)))
         return 0;
     else return -1;
@@ -46,8 +47,59 @@ HP_info *HP_OpenFile(char *fileName){
         BF_PrintError("Error reading block");
         exit(EXIT_FAILURE);
     }
-    printf("ok\n");
     HP_info *info = malloc(sizeof(HP_info));
+    info->attrName = malloc(strlen(header_block + 6) + 1);
     memcpy(info, header_block, sizeof(HP_info));
     return info;
+}
+
+int HP_CloseFile(HP_info *header_info){
+    if (BF_CloseFile(header_info->fileDesc) < 0){
+        BF_PrintError("Error closing file");
+        return -1;
+    }
+    free(header_info->attrName);
+    free(header_info);
+    return 0;
+}
+
+int HP_InsertEntry(HP_info header_info, Record record){
+    int blocksNum = BF_GetBlockCounter(header_info.fileDesc);
+
+    // If blocksNum is 1, only header block is saved
+    if (blocksNum == 1){
+        if (BF_AllocateBlock(header_info.fileDesc) < 0){
+            BF_PrintError("Error allocating block");
+            return -1;
+        }
+        void *block;
+        if (BF_ReadBlock(header_info.fileDesc, 1, &block) < 0){
+            BF_PrintError("Error reading block");
+            return -1;
+        }
+        //block + 512 - 4
+        if (memcpy(block, &record, sizeof(Record)))
+            return 0;
+        else return -1;
+    }
+    else{
+        void *empty_space;
+        int bfr = BLOCK_SIZE/sizeof(Record);
+        for (int i = 0; i < blocksNum; i++){
+            void *block;
+            if (BF_ReadBlock(header_info.fileDesc, i, &block) < 0){
+                BF_PrintError("Error reading block");
+                return -1;
+            }
+            int j;
+            for (j = 0; j < bfr; j++){
+                Record *current = (block + j*sizeof(Record));
+                if (record.id == current->id){
+                    break;
+                }
+                if ()
+            }
+            if (j < bfr) break;
+        }
+    }
 }

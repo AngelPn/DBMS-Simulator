@@ -5,4 +5,4 @@ typedef struct
     char name[15];
     char surname[25];
     char address[50];
-} record;
+} Record;
