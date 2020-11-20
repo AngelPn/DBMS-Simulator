@@ -21,7 +21,6 @@ int HP_CreateFile(char *fileName, char attrType, char *attrName, int attrLength)
         exit(EXIT_FAILURE);
     }
     void *block;
-    printf("%d\n", BF_GetBlockCounter(fileDesk));
     if (BF_ReadBlock(fileDesk, 0, &block) < 0){
         BF_PrintError("Error reading block");
         exit(EXIT_FAILURE);
@@ -34,4 +33,21 @@ int HP_CreateFile(char *fileName, char attrType, char *attrName, int attrLength)
     if (memcpy(block, &info, sizeof(HP_info)))
         return 0;
     else return -1;
+}
+
+HP_info *HP_OpenFile(char *fileName){
+    int fileDesk = 0;
+    if (fileDesk = BF_OpenFile(fileName) < 0){
+        BF_PrintError("Error opening file");
+		exit(EXIT_FAILURE);
+    }
+    void *header_block;
+    if (BF_ReadBlock(fileDesk, 0, &header_block) < 0){
+        BF_PrintError("Error reading block");
+        exit(EXIT_FAILURE);
+    }
+    printf("ok\n");
+    HP_info *info = malloc(sizeof(HP_info));
+    memcpy(info, header_block, sizeof(HP_info));
+    return info;
 }

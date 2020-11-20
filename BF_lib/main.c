@@ -9,5 +9,8 @@ int main(void){
         printf("success\n");
     else printf("not\n");
 
+    HP_info *info = HP_OpenFile("test");
+    printf("%d %c %s %d", info->fileDesc, info->attrType, info->attrName, info->attrLength);
+
     return 0;
 }
