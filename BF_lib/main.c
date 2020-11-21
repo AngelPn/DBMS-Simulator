@@ -12,6 +12,13 @@ int main(void){
     HP_info *info = HP_OpenFile("test");
     printf("%d %c %s %d\n", info->fileDesc, info->attrType, info->attrName, info->attrLength);
 
+    Record rec = {
+        .id = 3,
+        .name = "Nikos",
+        .surname = "rgrgrg",
+        .address = "kkkkkkkkkk"
+    };
+
     if (HP_CloseFile(info) < 0)
         printf("not\n");
     else printf("success\n");
