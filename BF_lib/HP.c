@@ -67,7 +67,31 @@ int HP_InsertEntry(HP_info header_info, Record record){
     int blocksNum = BF_GetBlockCounter(header_info.fileDesc);
 
     // If blocksNum is 1, only header block is saved
-    if (blocksNum == 1){
+
+    void *block_sus=NULL;
+    int bfr = BLOCK_SIZE/sizeof(Record);
+    for (int i = 1; i < blocksNum; i++){
+        void *block;
+        if (BF_ReadBlock(header_info.fileDesc, i, &block) < 0){
+            BF_PrintError("Error reading block");
+            return -1;
+        }
+        int count;
+        memcpy(&count, block+512-4, sizeof(int));
+        int j;
+        for (j = 0; j < count; j++){
+            Record *current = (block + j*sizeof(Record));
+            if (record.id == current->id){
+                break;
+            }
+        }
+        if (j < count) break;
+        else if (count < bfr){
+            //empty_space=block + count*sizeof(Record);
+            block_sus=block;
+        }
+    }
+    if (block_sus==NULL){
         if (BF_AllocateBlock(header_info.fileDesc) < 0){
             BF_PrintError("Error allocating block");
             return -1;
@@ -77,29 +101,16 @@ int HP_InsertEntry(HP_info header_info, Record record){
             BF_PrintError("Error reading block");
             return -1;
         }
+        int count=1;
+        memcpy(block+512-4, &count, sizeof(int));
         //block + 512 - 4
         if (memcpy(block, &record, sizeof(Record)))
             return 0;
         else return -1;
-    }
-    else{
-        void *empty_space;
-        int bfr = BLOCK_SIZE/sizeof(Record);
-        for (int i = 0; i < blocksNum; i++){
-            void *block;
-            if (BF_ReadBlock(header_info.fileDesc, i, &block) < 0){
-                BF_PrintError("Error reading block");
-                return -1;
-            }
-            int j;
-            for (j = 0; j < bfr; j++){
-                Record *current = (block + j*sizeof(Record));
-                if (record.id == current->id){
-                    break;
-                }
-                if ()
-            }
-            if (j < bfr) break;
-        }
+    } 
+    else {
+        int count;
+        memcpy(count, block_sus+512-4, sizeof(int));
+        memcpy(block_sus+count*sizeof(Record), &record, sizeof(Record));
     }
 }
