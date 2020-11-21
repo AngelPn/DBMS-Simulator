@@ -118,7 +118,6 @@ int HP_InsertEntry(HP_info header_info, Record record){
 
 int HP_DeleteEntry(HP_info header_info, void *value){
     int blocksNum = BF_GetBlockCounter(header_info.fileDesc);
-    int bfr = BLOCK_SIZE/sizeof(Record);
 
     for (int i = 1; i < blocksNum; i++){
         void *block;
@@ -141,4 +140,28 @@ int HP_DeleteEntry(HP_info header_info, void *value){
         }
     }
     return 0;
+}
+
+int HP_GetAllEntries(HP_info header_info, void *value){
+    int blocksNum = BF_GetBlockCounter(header_info.fileDesc);
+    int bfr = BLOCK_SIZE/sizeof(Record);
+    int i;
+
+    for (i = 1; i < blocksNum; i++){
+        void *block;
+        if (BF_ReadBlock(header_info.fileDesc, i, &block) < 0){
+            BF_PrintError("Error reading block");
+            return -1;
+        }
+        int count;
+        memcpy(&count, block+512-4, sizeof(int));
+        int j;
+        for (j = 0; j < count; j++){
+            Record *current = (block + j*sizeof(Record));
+            Record *val = value;
+            if (val->id == current->id){
+                
+            }
+        }
+    }
 }
