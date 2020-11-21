@@ -19,6 +19,19 @@ int main(void){
         .address = "kkkkkkkkkk"
     };
 
+    HP_InsertEntry(*info, rec);
+    HP_InsertEntry(*info, rec);
+    HP_InsertEntry(*info, rec);
+    HP_InsertEntry(*info, rec);
+    HP_InsertEntry(*info, rec);
+    HP_InsertEntry(*info, rec);
+    HP_InsertEntry(*info, rec);
+
+    int count = 3;
+    HP_DeleteEntry(*info, &count);
+    printf("delete\n");
+    HP_InsertEntry(*info, rec);
+
     if (HP_CloseFile(info) < 0)
         printf("not\n");
     else printf("success\n");

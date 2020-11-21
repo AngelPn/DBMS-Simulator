@@ -64,12 +64,11 @@ int HP_CloseFile(HP_info *header_info){
 }
 
 int HP_InsertEntry(HP_info header_info, Record record){
+
     int blocksNum = BF_GetBlockCounter(header_info.fileDesc);
-
-    // If blocksNum is 1, only header block is saved
-
     void *block_sus=NULL;
     int bfr = BLOCK_SIZE/sizeof(Record);
+
     for (int i = 1; i < blocksNum; i++){
         void *block;
         if (BF_ReadBlock(header_info.fileDesc, i, &block) < 0){
@@ -87,10 +86,10 @@ int HP_InsertEntry(HP_info header_info, Record record){
         }
         if (j < count) break;
         else if (count < bfr){
-            //empty_space=block + count*sizeof(Record);
             block_sus=block;
         }
     }
+
     if (block_sus==NULL){
         if (BF_AllocateBlock(header_info.fileDesc) < 0){
             BF_PrintError("Error allocating block");
@@ -103,14 +102,43 @@ int HP_InsertEntry(HP_info header_info, Record record){
         }
         int count=1;
         memcpy(block+512-4, &count, sizeof(int));
-        //block + 512 - 4
-        if (memcpy(block, &record, sizeof(Record)))
-            return 0;
-        else return -1;
-    } 
+        memcpy(block, &record, sizeof(Record));
+        Record *cur = block;
+        printf("%s\n", cur->name);
+    }
     else {
         int count;
-        memcpy(count, block_sus+512-4, sizeof(int));
+        memcpy(&count, block_sus+512-4, sizeof(int));
         memcpy(block_sus+count*sizeof(Record), &record, sizeof(Record));
+        Record *cur = block_sus+count*sizeof(Record);
+        printf("%s\n", cur->name);
     }
+    return 0;
+}
+
+int HP_DeleteEntry(HP_info header_info, void *value){
+    int blocksNum = BF_GetBlockCounter(header_info.fileDesc);
+    int bfr = BLOCK_SIZE/sizeof(Record);
+
+    for (int i = 1; i < blocksNum; i++){
+        void *block;
+        if (BF_ReadBlock(header_info.fileDesc, i, &block) < 0){
+            BF_PrintError("Error reading block");
+            return -1;
+        }
+        int count;
+        memcpy(&count, block+512-4, sizeof(int));
+        int j;
+        for (j = 0; j < count; j++){
+            Record *current = (block + j*sizeof(Record));
+            Record *val = value;
+            if (val->id == current->id){
+                Record *last_rec = (block + count*sizeof(Record));
+                count--;
+                memcpy(block+512-4, &count, sizeof(int));
+                memcpy(last_rec, current, sizeof(Record));
+            }
+        }
+    }
+    return 0;
 }
