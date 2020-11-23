@@ -27,7 +27,7 @@ int main(void){
     HP_InsertEntry(*info, rec);
     HP_InsertEntry(*info, rec);
 
-    int count = 3;
+    int count = 4;
     HP_DeleteEntry(*info, &count);
     printf("delete\n");
     HP_InsertEntry(*info, rec);
