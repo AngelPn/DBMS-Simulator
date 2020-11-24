@@ -31,9 +31,10 @@ int HP_CreateFile(char *fileName, char attrType, char *attrName, int attrLength)
                     .attrLength = attrLength
                     };
     strcpy(info.attrName, attrName);
-    if (memcpy(block, &info, sizeof(HP_info)))
-        return 0;
-    else return -1;
+    memcpy(block, &info, sizeof(HP_info));
+    if (BF_WriteBlock(fileDesc, 0) < 0)
+        return -1;
+    else return 0;
 }
 
 HP_info *HP_OpenFile(char *fileName){
@@ -67,7 +68,8 @@ int HP_InsertEntry(HP_info header_info, Record record){
 
     int blocksNum = BF_GetBlockCounter(header_info.fileDesc);
     void *block_sus=NULL;
-    int bfr = BLOCK_SIZE/sizeof(Record);
+    int count = 0;
+    int block_num = 0;
 
     for (int i = 1; i < blocksNum; i++){
         void *block;
@@ -75,22 +77,26 @@ int HP_InsertEntry(HP_info header_info, Record record){
             BF_PrintError("Error reading block");
             return -1;
         }
-        int count;
         memcpy(&count, block+512-4, sizeof(int));
         int j;
         for (j = 0; j < count; j++){
-            Record *current = (block + j*sizeof(Record));
-            if (record.id == current->id){
+            Record current = (block + j*sizeof(RECORD_SIZE));
+
+            void *record_key = get_key(record, header_info.attrName);
+            void *current_key = get_key(current, header_info.attrName);
+            
+            if (memcmp(record_key, current_key, header_info.attrLength) == 0){
                 break;
             }
         }
         if (j < count) break;
-        else if (count < bfr){
+        else if (count < BLOCK_SIZE/sizeof(Record)){
             block_sus=block;
+            block_num = i;
         }
     }
 
-    if (block_sus==NULL){
+    if (block_sus == NULL){
         if (BF_AllocateBlock(header_info.fileDesc) < 0){
             BF_PrintError("Error allocating block");
             return -1;
@@ -100,20 +106,25 @@ int HP_InsertEntry(HP_info header_info, Record record){
             BF_PrintError("Error reading block");
             return -1;
         }
-        int count=1;
+        block_num = blocksNum + 1;
+        count = 1;
         memcpy(block+512-4, &count, sizeof(int));
-        memcpy(block, &record, sizeof(Record));
-        Record *cur = block;
-        printf("%s\n", cur->name);
+        memcpy(block, record, sizeof(RECORD_SIZE));
+
+        //Record *cur = block;
+        //printf("%s\n", cur->name);
     }
     else {
-        int count;
         memcpy(&count, block_sus+512-4, sizeof(int));
-        memcpy(block_sus+count*sizeof(Record), &record, sizeof(Record));
-        Record *cur = block_sus+count*sizeof(Record);
-        printf("%s\n", cur->name);
+        memcpy(block_sus+count*sizeof(RECORD_SIZE), record, sizeof(RECORD_SIZE));
+
+        //Record *cur = block_sus+count*sizeof(Record);
+        //printf("%s\n", cur->name);
     }
-    return 0;
+
+    if (BF_WriteBlock(header_info.fileDesc, block_num) < 0)
+        return -1;
+    else return 0;
 }
 
 int HP_DeleteEntry(HP_info header_info, void *value){
@@ -129,13 +140,20 @@ int HP_DeleteEntry(HP_info header_info, void *value){
         memcpy(&count, block+512-4, sizeof(int));
         int j;
         for (j = 0; j < count; j++){
-            Record *current = (block + j*sizeof(Record));
-            Record *val = value;
-            if (val->id == current->id){
-                Record *last_rec = (block + count*sizeof(Record));
+
+            Record current = (block + j*sizeof(RECORD_SIZE));
+            void *current_key = get_key(current, header_info.attrName);
+
+            if (memcmp(value, current_key, header_info.attrLength) == 0){
+
+                Record last_rec = (block + count*sizeof(RECORD_SIZE));
                 count--;
                 memcpy(block+512-4, &count, sizeof(int));
-                memcpy(last_rec, current, sizeof(Record));
+                memcpy(last_rec, current, sizeof(RECORD_SIZE));
+
+                if (BF_WriteBlock(header_info.fileDesc, i) < 0)
+                    return -1;
+                else return 0;
             }
         }
     }
@@ -157,11 +175,14 @@ int HP_GetAllEntries(HP_info header_info, void *value){
         memcpy(&count, block+512-4, sizeof(int));
         int j;
         for (j = 0; j < count; j++){
-            Record *current = (block + j*sizeof(Record));
-            Record *val = value;
-            if (val->id == current->id){
-                
+            Record current = (block + j*sizeof(RECORD_SIZE));
+            void *current_key = get_key(current, header_info.attrName);
+
+            if (memcmp(value, current_key, header_info.attrLength) == 0){
+                print_record(current);
+                return 0;
             }
         }
     }
+    return 0;
 }

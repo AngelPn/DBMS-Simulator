@@ -1,11 +1,14 @@
+#ifndef HP_H
+#define HP_H
+
 #include "Record.h"
 
 typedef struct HP_info
 {
     int fileDesc;
-    char attrType;
-    char *attrName;
-    int attrLength;
+    char attrType; //type of key
+    char *attrName; //name of key
+    int attrLength; //size of key
 } HP_info;
 
 
@@ -21,3 +24,4 @@ int HP_DeleteEntry(HP_info header_info, void *value);
 
 int HP_GetAllEntries(HP_info header_info, void *value);
 
+#endif /*HP_H*/

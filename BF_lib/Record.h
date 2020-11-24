@@ -1,8 +1,12 @@
+#ifndef RECORD_H
+#define RECORD_H
 
-typedef struct
-{
-    int id;
-    char name[15];
-    char surname[25];
-    char address[50];
-} Record;
+#define RECORD_SIZE 94
+
+typedef struct record *Record;
+
+void set_types(Record rec, int id, char *name, char *surname, char *address);
+void *get_key(Record rec, char *attrName);
+void print_record(Record rec);
+
+#endif /*RECORD_H*/
