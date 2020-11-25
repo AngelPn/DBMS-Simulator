@@ -13,26 +13,28 @@ int main(void){
     HP_info *info = HP_OpenFile("test");
     printf("%d %c %s %d\n", info->fileDesc, info->attrType, info->attrName, info->attrLength);
 
-    Record rec;
-    set_types(rec, 3, "Nikos", "rgregreg", "kkkkkk");
+    Record rec = create_record(3, "Nikos", "rgregreg", "kkkkkk");
+   // print_record(rec);
 
     HP_InsertEntry(*info, rec);
-    HP_InsertEntry(*info, rec);
-    HP_InsertEntry(*info, rec);
-    HP_InsertEntry(*info, rec);
-    HP_InsertEntry(*info, rec);
-    HP_InsertEntry(*info, rec);
-    HP_InsertEntry(*info, rec);
-    HP_InsertEntry(*info, rec);
+    int key = 3;
+    HP_GetAllEntries(*info, &key);
+    // HP_InsertEntry(*info, rec);
+    // HP_InsertEntry(*info, rec);
+    // HP_InsertEntry(*info, rec);
+    // HP_InsertEntry(*info, rec);
+    // HP_InsertEntry(*info, rec);
+    // HP_InsertEntry(*info, rec);
+    // HP_InsertEntry(*info, rec);
 
-    int count = 4;
-    HP_DeleteEntry(*info, &count);
-    printf("delete\n");
-    HP_InsertEntry(*info, rec);
+    // int count = 4;
+    // HP_DeleteEntry(*info, &count);
+    // printf("delete\n");
+    // HP_InsertEntry(*info, rec);
 
-    if (HP_CloseFile(info) < 0)
-        printf("not\n");
-    else printf("success\n");
+    // if (HP_CloseFile(info) < 0)
+    //     printf("not\n");
+    // else printf("success\n");
 
     return 0;
 }

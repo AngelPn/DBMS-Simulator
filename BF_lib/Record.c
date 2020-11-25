@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "Record.h"
 
@@ -11,13 +12,13 @@ struct record
     char address[50];
 };
 
-void set_types(Record rec, int id, char *name, char *surname, char *address){
-    printf("set types 1\n");
+Record create_record(int id, char *name, char *surname, char *address){
+    Record rec = calloc(RECORD_SIZE, sizeof(struct record));
     rec->id = id;
     strcpy(rec->name, name);
-    printf("set types 2\n");
     strcpy(rec->surname, surname);
     strcpy(rec->address, address);
+    return rec;
 }
 
 void *get_key(Record rec, char *attrName){
@@ -35,3 +36,6 @@ void print_record(Record rec){
     printf("ID: %d, Name: %s, Surname: %s, Address: %s\n", rec->id, rec->name, rec->surname, rec->address);
 }
 
+void free_record(Record rec){
+    free(rec);
+}
