@@ -139,7 +139,7 @@ int HP_DeleteEntry(HP_info header_info, void *value){
         BF_PrintError("Error reading block");
         return -1;
     }
-    current_block = current_block + NEXT;
+    current_block = *(int*)(current_block + NEXT);
 
     while (current_block != NULL) {
         void *block;
