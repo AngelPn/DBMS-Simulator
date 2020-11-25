@@ -183,9 +183,10 @@ int HP_GetAllEntries(HP_info header_info, void *value){
     while ( block_num < BF_GetBlockCounter(header_info.fileDesc)-1) { //while (current_block != NULL)
         block_num++;
     
-        int count;
-        memcpy(&count, current_block + REC_NUM, sizeof(int));
-        //printf("%d\n",count);
+        int count = *(int *)(current_block + REC_NUM);
+        // int count;
+        // memcpy(&count, current_block + REC_NUM, sizeof(int));
+        printf("%d\n",count);
     
         for (int j = 0; j < count; j++){
             Record current_rec = current_block + j*RECORD_SIZE;
