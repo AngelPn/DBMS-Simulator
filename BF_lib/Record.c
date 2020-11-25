@@ -12,8 +12,10 @@ struct record
 };
 
 void set_types(Record rec, int id, char *name, char *surname, char *address){
+    printf("set types 1\n");
     rec->id = id;
     strcpy(rec->name, name);
+    printf("set types 2\n");
     strcpy(rec->surname, surname);
     strcpy(rec->address, address);
 }

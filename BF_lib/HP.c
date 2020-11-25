@@ -32,6 +32,7 @@ int HP_CreateFile(char *fileName, char attrType, char *attrName, int attrLength)
                     };
     strcpy(info.attrName, attrName);
     memcpy(block, &info, sizeof(HP_info));
+    //memcpy(block+512-8, NULL, 4);
     if (BF_WriteBlock(fileDesc, 0) < 0)
         return -1;
     else return 0;
@@ -66,53 +67,58 @@ int HP_CloseFile(HP_info *header_info){
 
 int HP_InsertEntry(HP_info header_info, Record record){
 
-    int blocksNum = BF_GetBlockCounter(header_info.fileDesc);
     void *block_sus=NULL;
     int count = 0;
     int block_num = 0;
+    void *current_block, *previous_block;
+    if (BF_ReadBlock(header_info.fileDesc, 0,  &current_block) < 0){
+        BF_PrintError("Error reading block");
+        return -1;
+    }
+    previous_block = current_block;
+    current_block = current_block+512-8;
 
-    for (int i = 1; i < blocksNum; i++){
-        void *block;
-        if (BF_ReadBlock(header_info.fileDesc, i, &block) < 0){
-            BF_PrintError("Error reading block");
-            return -1;
-        }
-        memcpy(&count, block+512-4, sizeof(int));
+    while ( current_block != NULL) {
+        block_num++;
+        memcpy(&count, current_block+512-4, sizeof(int));
         int j;
         for (j = 0; j < count; j++){
-            Record current = (block + j*sizeof(RECORD_SIZE));
+            Record current_rec = (current_block + j*sizeof(RECORD_SIZE));
 
             void *record_key = get_key(record, header_info.attrName);
-            void *current_key = get_key(current, header_info.attrName);
+            void *current_key = get_key(current_rec, header_info.attrName);
             
             if (memcmp(record_key, current_key, header_info.attrLength) == 0){
-                break;
+                return -1;
             }
         }
-        if (j < count) break;
-        else if (count < BLOCK_SIZE/sizeof(Record)){
-            block_sus=block;
-            block_num = i;
+        if (count < BLOCK_SIZE/sizeof(Record)){
+            block_sus=current_block;
         }
+        previous_block = current_block;
+        current_block = current_block+512-8;
     }
 
-    if (block_sus == NULL){
+    if (block_sus == NULL){ /*if all previous blocks are full*/
         if (BF_AllocateBlock(header_info.fileDesc) < 0){
             BF_PrintError("Error allocating block");
             return -1;
         }
         void *block;
-        if (BF_ReadBlock(header_info.fileDesc, 1, &block) < 0){
+        if (BF_ReadBlock(header_info.fileDesc, BF_GetBlockCounter(header_info.fileDesc), &block) < 0){
             BF_PrintError("Error reading block");
             return -1;
         }
-        block_num = blocksNum + 1;
+        memcpy(previous_block+512-8, &block, 4); /*previous block points to this block*/
         count = 1;
         memcpy(block+512-4, &count, sizeof(int));
         memcpy(block, record, sizeof(RECORD_SIZE));
 
+        //memcpy(block+512-8, NULL, 4); /*this block points to null-it is the last block*/
+
         //Record *cur = block;
         //printf("%s\n", cur->name);
+        block_num++;
     }
     else {
         memcpy(&count, block_sus+512-4, sizeof(int));
@@ -124,65 +130,73 @@ int HP_InsertEntry(HP_info header_info, Record record){
 
     if (BF_WriteBlock(header_info.fileDesc, block_num) < 0)
         return -1;
-    else return 0;
+    return block_num;
 }
 
 int HP_DeleteEntry(HP_info header_info, void *value){
-    int blocksNum = BF_GetBlockCounter(header_info.fileDesc);
+    void *current_block; 
+    int block_num=0;
+    if (BF_ReadBlock(header_info.fileDesc, 0,  &current_block) < 0){
+        BF_PrintError("Error reading block");
+        return -1;
+    }
+    current_block = current_block+512-8;
 
-    for (int i = 1; i < blocksNum; i++){
+    while (current_block != NULL) {
         void *block;
-        if (BF_ReadBlock(header_info.fileDesc, i, &block) < 0){
-            BF_PrintError("Error reading block");
-            return -1;
-        }
+        block_num++;
+
         int count;
         memcpy(&count, block+512-4, sizeof(int));
-        int j;
-        for (j = 0; j < count; j++){
+   
+        for (int j = 0; j < count; j++){
 
-            Record current = (block + j*sizeof(RECORD_SIZE));
-            void *current_key = get_key(current, header_info.attrName);
+            Record current_rec = (block + j*sizeof(RECORD_SIZE));
+            void *current_key = get_key(current_rec, header_info.attrName);
 
             if (memcmp(value, current_key, header_info.attrLength) == 0){
 
                 Record last_rec = (block + count*sizeof(RECORD_SIZE));
                 count--;
                 memcpy(block+512-4, &count, sizeof(int));
-                memcpy(last_rec, current, sizeof(RECORD_SIZE));
+                memcpy(last_rec, current_rec, sizeof(RECORD_SIZE));
 
-                if (BF_WriteBlock(header_info.fileDesc, i) < 0)
+                if (BF_WriteBlock(header_info.fileDesc, block_num) < 0)
                     return -1;
                 else return 0;
             }
         }
+        current_block = current_block+512-8;
     }
-    return 0;
+    return -1;
 }
 
 int HP_GetAllEntries(HP_info header_info, void *value){
-    int blocksNum = BF_GetBlockCounter(header_info.fileDesc);
-    int bfr = BLOCK_SIZE/sizeof(Record);
-    int i;
+    
+    void *current_block; 
+    int block_num=0;
+    if (BF_ReadBlock(header_info.fileDesc, 0,  &current_block) < 0){
+        BF_PrintError("Error reading block");
+        return -1;
+    }
+    current_block = current_block+512-8;
 
-    for (i = 1; i < blocksNum; i++){
+    while (current_block != NULL) {
         void *block;
-        if (BF_ReadBlock(header_info.fileDesc, i, &block) < 0){
-            BF_PrintError("Error reading block");
-            return -1;
-        }
+        block_num++;
+    
         int count;
         memcpy(&count, block+512-4, sizeof(int));
-        int j;
-        for (j = 0; j < count; j++){
-            Record current = (block + j*sizeof(RECORD_SIZE));
-            void *current_key = get_key(current, header_info.attrName);
+    
+        for (int j = 0; j < count; j++){
+            Record current_rec = (block + j*sizeof(RECORD_SIZE));
+            void *current_key = get_key(current_rec, header_info.attrName);
 
             if (memcmp(value, current_key, header_info.attrLength) == 0){
-                print_record(current);
-                return 0;
+                print_record(current_rec);
+                return block_num;
             }
         }
     }
-    return 0;
+    return -1;
 }
