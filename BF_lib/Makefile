@@ -20,7 +20,8 @@ $(EXEC): $(OBJS)
 	$(CC) -o $@ $(OBJS) -no-pie $(LIBS)
 
 clean:
-	find . -type f -not -name '*c' -not -name '*h' -not -name '*a' -not -name 'Makefile' -delete
+	rm -f $(OBJS) $(EXEC)
+	#find . -type f -not -name '*c' -not -name '*h' -not -name '*a' -not -name 'Makefile' -delete
 
 run: $(EXEC)
 	./$(EXEC)
