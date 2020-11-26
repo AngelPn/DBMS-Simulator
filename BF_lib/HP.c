@@ -79,7 +79,7 @@ int HP_InsertEntry(HP_info header_info, Record record){
         return -1;
     }
     previous_block = current_block;
-    current_block = *(int*)(current_block + NEXT);
+    current_block = *(void **)(current_block + NEXT);
 
     while ( block_num < BF_GetBlockCounter(header_info.fileDesc)-1) { //while (current_block != NULL)
         block_num++;
@@ -100,7 +100,7 @@ int HP_InsertEntry(HP_info header_info, Record record){
             block_sus=current_block;
         }
         previous_block = current_block;
-        current_block = *(int*)(current_block + NEXT);
+        current_block = *(void **)(current_block + NEXT);
     }
 
     if (block_sus == NULL){ /*if all previous blocks are full*/
@@ -141,7 +141,7 @@ int HP_DeleteEntry(HP_info header_info, void *value){
         BF_PrintError("Error reading block");
         return -1;
     }
-    current_block = *(int*)(current_block + NEXT);
+    current_block = *(void **)(current_block + NEXT);
 
     while ( block_num < BF_GetBlockCounter(header_info.fileDesc)-1) { //while (current_block != NULL)
         block_num++;
@@ -167,7 +167,7 @@ int HP_DeleteEntry(HP_info header_info, void *value){
                 else return 0;
             }
         }
-        current_block = *(int*)(current_block + NEXT);
+        current_block = *(void **)(current_block + NEXT);
     }
     return -1;
 }
@@ -180,7 +180,7 @@ int HP_GetAllEntries(HP_info header_info, void *value){
         BF_PrintError("Error reading block");
         return -1;
     }
-    current_block = *(int*)(current_block + NEXT);
+    current_block = *(void **)(current_block + NEXT);
 
     while ( block_num < BF_GetBlockCounter(header_info.fileDesc)-1) { //while (current_block != NULL)
         block_num++;
@@ -198,7 +198,7 @@ int HP_GetAllEntries(HP_info header_info, void *value){
                 return block_num;
             }
         }
-        current_block = *(int*)(current_block + NEXT);
+        current_block = *(void **)(current_block + NEXT);
     }
     return -1;
 }
