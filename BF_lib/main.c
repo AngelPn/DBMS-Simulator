@@ -20,22 +20,29 @@ int main(void){
         printf("Error: fopen() failed\n");
         exit(EXIT_FAILURE);
     }
-    fseek(frecords, 0, SEEK_SET);
-
+    //fseek(frecords, 0, SEEK_SET);
+    
     int id;
     char name[15];
     char surname[25];
     char address[50];
-    fscanf(frecords, "{%d,\"%[^\",\"]\",\"%[^\",\"]\",\"%[^\"]\"}", &id, name, surname, address);
-    printf("ID: %d\tName: %s\tSurname: %s\tAddress: %s\n", id, name, surname, address);
-    // while(fscanf(frecords, "{%d,""%s"",""%s"",""%s""}", &id, name, surname, address) != EOF){
-    //     printf("ID: %d, Name: %s, Surname: %s, Address: %s\n", id, name, surname, address);
-    // }
+    Record x;
+    // fscanf(frecords, "{%d,\"%[^\",\"]\",\"%[^\",\"]\",\"%[^\"]\"}", &id, name, surname, address);
+    // printf("ID: %d\tName: %s\tSurname: %s\tAddress: %s\n", id, name, surname, address);
+    int countiter;
+    while(fscanf(frecords, "{%d,\"%[^\",\"]\",\"%[^\",\"]\",\"%[^\"]\"}\n", &id, name, surname, address) != EOF){
+        if (HP_InsertEntry(*info ,x = create_record(id, name, surname, address))==-1){
+            printf("Record with id: %d could not entry\n", id);
+        }
+        free_record(x);
+        if (countiter > 10) break;
+        countiter++;
+    }
 
     fclose(frecords);
 
 //     Record rec = create_record(3, "Nikos", "rgregreg", "kkkkkk");
-//     //Record rec = create_record(3, "Nikos", "rgregreg", "kkkkkk");
+//     Record rec = create_record(3, "Nikos", "rgregreg", "kkkkkk");
 //    // print_record(rec);
 
 

@@ -5,7 +5,7 @@
 #include "HP.h"
 #include "BF.h"
 
-#define NEXT BLOCK_SIZE-2*sizeof(int)-1
+#define NEXT BLOCK_SIZE-2*sizeof(int*)-1
 #define REC_NUM BLOCK_SIZE-sizeof(int)-1
 
 int HP_CreateFile(char *fileName, char attrType, char *attrName, int attrLength){
@@ -75,21 +75,26 @@ int HP_InsertEntry(HP_info header_info, Record record){
     void *block_sus=NULL;
     int count = 0;
     int block_num = 0;
-    void *current_block, *previous_block;
+    void *current_block=NULL, *previous_block=NULL, *this_block=NULL;
     if (BF_ReadBlock(header_info.fileDesc, 0,  &current_block) < 0){
         BF_PrintError("Error reading block");
         return -1;
     }
+
     previous_block = current_block;
-    current_block = *(void **)(current_block + NEXT);
+    printf("%p\n", (previous_block));
 
     while ( block_num < BF_GetBlockCounter(header_info.fileDesc)-1) { //while (current_block != NULL)
+        current_block = *(void **)(current_block + NEXT);
+        printf("%d %p\n", NEXT, (current_block));
+
         block_num++;
-        memcpy(&count, current_block + REC_NUM, sizeof(int));
-
+        // memcpy(&count, current_block + REC_NUM, sizeof(int));
+        count = *(int *)(current_block + REC_NUM);
+        printf("count: %d\n", count);
         for (int j = 0; j < count; j++){
-            Record current_rec = (current_block + j*RECORD_SIZE);
-
+            Record current_rec = (Record)(current_block + j*RECORD_SIZE);
+            //print_record(current_rec);
             void *record_key = get_key(record, header_info.attrName);
             void *current_key = get_key(current_rec, header_info.attrName);
             printf("keys %d %d\n", *(int *)record_key, *(int *)current_key);
@@ -98,14 +103,14 @@ int HP_InsertEntry(HP_info header_info, Record record){
                 return -1;
             }
         }
-        if (count < BLOCK_SIZE/sizeof(Record)){
+        if (count < BLOCK_SIZE/RECORD_SIZE){
             block_sus=current_block;
         }
         previous_block = current_block;
-        current_block = *(void **)(current_block + NEXT);
     }
 
     if (block_sus == NULL){ /*if all previous blocks are full*/
+        printf("MPHKA\n");
         if (BF_AllocateBlock(header_info.fileDesc) < 0){
             BF_PrintError("Error allocating block");
             return -1;
@@ -116,18 +121,22 @@ int HP_InsertEntry(HP_info header_info, Record record){
             return -1;
         }
         //block-> void *, &block->void **
-        memcpy(previous_block + NEXT, &block, sizeof(int));/*previous block points to this block*/
-
+        memcpy(previous_block + NEXT, &block, sizeof(int*));/*previous block points to this block*/
+        printf("%p\n", (previous_block));
+        printf("%p\n", *(void **)(previous_block+NEXT));
+        printf("%p\n", (block));
+        print_record( (Record)previous_block);
         count = 1;
         memcpy(block + REC_NUM, &count, sizeof(int));
 
-        memcpy((Record)block, record, RECORD_SIZE);
+        memcpy(block, record, RECORD_SIZE);
 
         block_num++;
     }
     else {
-        memcpy(&count, block_sus + REC_NUM, sizeof(int));
-        memcpy(block_sus+count*RECORD_SIZE, record, RECORD_SIZE);
+        count++;
+        memcpy(block_sus + REC_NUM, &count, sizeof(int));
+        memcpy(block_sus+(count-1)*RECORD_SIZE, record, RECORD_SIZE);
     }
 
     if (BF_WriteBlock(header_info.fileDesc, block_num) < 0)
