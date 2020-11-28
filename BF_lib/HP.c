@@ -52,10 +52,12 @@ HP_info *HP_OpenFile(char *fileName){
         BF_PrintError("Error reading block");
         exit(EXIT_FAILURE);
     }
-    HP_info *info = malloc(sizeof(HP_info));
+    HP_info *info = (HP_info *)malloc(sizeof(HP_info));
     info->attrName = malloc(strlen(header_block + 6) + 1);
     memcpy(info, header_block, sizeof(HP_info));
     return info;
+
+    //return (HP_info *)header_block;
 }
 
 int HP_CloseFile(HP_info *header_info){
@@ -146,8 +148,9 @@ int HP_DeleteEntry(HP_info header_info, void *value){
     while ( block_num < BF_GetBlockCounter(header_info.fileDesc)-1) { //while (current_block != NULL)
         block_num++;
 
-        int count;
-        memcpy(&count, current_block + REC_NUM, sizeof(int));
+        int count = *(int *)(current_block + REC_NUM);
+        // int count;
+        // memcpy(&count, current_block + REC_NUM, sizeof(int));
    
         for (int j = 0; j < count; j++){
 

@@ -27,7 +27,7 @@ int main(void){
     char surname[25];
     char address[50];
     fscanf(frecords, "{%d,\"%[^\",\"]\",\"%[^\",\"]\",\"%[^\"]\"}", &id, name, surname, address);
-    printf("ID: %d  Name: %s    Surname: %s     Address: %s\n", id, name, surname, address);
+    printf("ID: %d\tName: %s\tSurname: %s\tAddress: %s\n", id, name, surname, address);
     // while(fscanf(frecords, "{%d,""%s"",""%s"",""%s""}", &id, name, surname, address) != EOF){
     //     printf("ID: %d, Name: %s, Surname: %s, Address: %s\n", id, name, surname, address);
     // }
