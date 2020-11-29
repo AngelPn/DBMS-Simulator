@@ -35,7 +35,7 @@ int main(void){
             printf("Record with id: %d could not entry\n", id);
         }
         free_record(x);
-        if (countiter > 10) break;
+        if (countiter > 999) break;
         countiter++;
     }
 
