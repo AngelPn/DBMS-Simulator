@@ -11,7 +11,8 @@ int main(void){
     else printf("not\n");
 
     HP_info *info = HP_OpenFile("test");
-    printf("%d %c %s %d\n", info->fileDesc, info->attrType, info->attrName, info->attrLength);
+    if (info != NULL)
+        printf("%d %c %s %d\n", info->fileDesc, info->attrType, info->attrName, info->attrLength);
 
     FILE *frecords;
     /*Open the file "records1K.txt" and read it*/
@@ -27,43 +28,25 @@ int main(void){
     char surname[25];
     char address[50];
     Record x;
-    // fscanf(frecords, "{%d,\"%[^\",\"]\",\"%[^\",\"]\",\"%[^\"]\"}", &id, name, surname, address);
-    // printf("ID: %d\tName: %s\tSurname: %s\tAddress: %s\n", id, name, surname, address);
     int countiter;
     while(fscanf(frecords, "{%d,\"%[^\",\"]\",\"%[^\",\"]\",\"%[^\"]\"}\n", &id, name, surname, address) != EOF){
         if (HP_InsertEntry(*info ,x = create_record(id, name, surname, address))==-1){
             printf("Record with id: %d could not entry\n", id);
         }
         free_record(x);
-        if (countiter > 999) break;
+        if (countiter > 100) break;
         countiter++;
     }
 
     fclose(frecords);
 
-//     Record rec = create_record(3, "Nikos", "rgregreg", "kkkkkk");
-//     Record rec = create_record(3, "Nikos", "rgregreg", "kkkkkk");
-//    // print_record(rec);
+    int key = 54;
+    HP_GetAllEntries(*info, &key);
+    HP_DeleteEntry(*info, &key);
 
-
-//     HP_InsertEntry(*info, rec);
-    
-//     if (HP_InsertEntry(*info, rec)==-1) printf("-1\n");
-//     // HP_InsertEntry(*info, rec);
-//     // HP_InsertEntry(*info, rec);
-//     // HP_InsertEntry(*info, rec);
-//     // HP_InsertEntry(*info, rec);
-//     // HP_InsertEntry(*info, rec);
-//     // HP_InsertEntry(*info, rec);
-//     int key = 3;
-//     HP_GetAllEntries(*info, &key);
-//     HP_DeleteEntry(*info, &key);
-//     // printf("delete\n");
-//     // HP_InsertEntry(*info, rec);
-
-//     if (HP_CloseFile(info) < 0)
-//         printf("not\n");
-//     else printf("success\n");
+    if (HP_CloseFile(info) < 0)
+        printf("not\n");
+    else printf("success\n");
 
     return 0;
 }

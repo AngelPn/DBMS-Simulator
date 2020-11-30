@@ -5,7 +5,7 @@
 #include "HP.h"
 #include "BF.h"
 
-#define NEXT BLOCK_SIZE-2*sizeof(void*)-1
+#define NEXT BLOCK_SIZE-2*sizeof(int)-1
 #define REC_NUM BLOCK_SIZE-sizeof(int)-1
 
 int HP_CreateFile(char *fileName, char attrType, char *attrName, int attrLength){
@@ -22,13 +22,13 @@ int HP_CreateFile(char *fileName, char attrType, char *attrName, int attrLength)
         BF_PrintError("Error opening file");
         exit(EXIT_FAILURE);
     }
+    printf("filedesk = %d\n",fileDesc);
 
     // Allocate the header block
     if (BF_AllocateBlock(fileDesc) < 0){
         BF_PrintError("Error allocating block");
         exit(EXIT_FAILURE);
     }
-
 
     void *block;
     if (BF_ReadBlock(fileDesc, 0, &block) < 0){
@@ -37,11 +37,16 @@ int HP_CreateFile(char *fileName, char attrType, char *attrName, int attrLength)
     }
     HP_info info = {.fileDesc = fileDesc,
                     .attrType = attrType, 
-                    .attrName = malloc(strlen(attrName)+1),
+                    .attrName = malloc(strlen(attrName)+1), //malloc(sizeof(char)*(strlen(attrName)+1))
                     .attrLength = attrLength
                     };
     strcpy(info.attrName, attrName);
     memcpy(block, &info, sizeof(HP_info));
+    free(info.attrName);
+
+    // Next block empty: -1
+    int count = -1;
+    memcpy(block + NEXT, &count, sizeof(int));
 
     if (BF_WriteBlock(fileDesc, 0) < 0)
         return -1;
@@ -60,11 +65,12 @@ HP_info *HP_OpenFile(char *fileName){
         exit(EXIT_FAILURE);
     }
     HP_info *info = (HP_info *)malloc(sizeof(HP_info));
-    info->attrName = malloc(strlen(header_block + 6) + 1);
-    memcpy(info, header_block, sizeof(HP_info));
-    return info;
 
-    //return (HP_info *)header_block;
+    HP_info *header_info = (HP_info *)header_block;
+    info->attrName = malloc(strlen(header_info->attrName) + 1);
+    memcpy(info, header_block, sizeof(HP_info));
+    HP_info *header = (HP_info *)header_block;
+    return info;
 }
 
 int HP_CloseFile(HP_info *header_info){
@@ -79,96 +85,107 @@ int HP_CloseFile(HP_info *header_info){
 
 int HP_InsertEntry(HP_info header_info, Record record){
 
-    void *block_sus=NULL;
+    int block_susID = -1;
     int count = 0;
-    int block_num = 0;
-    void *current_block=NULL, *previous_block=NULL, *this_block=NULL;
-    if (BF_ReadBlock(header_info.fileDesc, 0,  &current_block) < 0){
+    int blockID = 0;
+    int prev_blockID = 0;
+    void *current_block;
+
+    if (BF_ReadBlock(header_info.fileDesc, blockID, &current_block) < 0){
         BF_PrintError("Error reading block");
         return -1;
     }
+    blockID = *(int *)(current_block + NEXT);
 
-    previous_block = current_block;
-    printf("\n\nHEADER BLOCK: %p\n", (previous_block));
+    while ( blockID != -1) { //while (current_block != NULL)
+        if (BF_ReadBlock(header_info.fileDesc, blockID, &current_block) < 0){
+            BF_PrintError("Error reading block");
+            return -1;
+        }
 
-    while ( block_num < BF_GetBlockCounter(header_info.fileDesc)-1) { //while (current_block != NULL)
-        current_block = *(void **)(current_block + NEXT);
-        printf("\n\ncurrent block: %p\n", (current_block));
-
-        block_num++;
-        // memcpy(&count, current_block + REC_NUM, sizeof(int));
         count = *(int *)(current_block + REC_NUM);
-        printf("count: %d\n", count);
+
         for (int j = 0; j < count; j++){
+
             Record current_rec = (Record)(current_block + j*RECORD_SIZE);
-            //print_record(current_rec);
+
             void *record_key = get_key(record, header_info.attrName);
             void *current_key = get_key(current_rec, header_info.attrName);
-            printf("keys:%d-%d\t", *(int *)record_key, *(int *)current_key);
+            //printf("keys:%d-%d\t", *(int *)record_key, *(int *)current_key);
             
             if (memcmp(record_key, current_key, header_info.attrLength) == 0){
                 return -1;
             }
         }
         if (count < BLOCK_SIZE/RECORD_SIZE){
-            block_sus=current_block;
+            block_susID = blockID;
         }
-        previous_block = current_block;
+        prev_blockID = blockID;
+        blockID = *(int *)(current_block + NEXT);
     }
 
-    if (block_sus == NULL){ /*if all previous blocks are full*/
-        printf("\nMPHKA\n");
+    if (block_susID == -1){ /*if all previous blocks are full*/
         if (BF_AllocateBlock(header_info.fileDesc) < 0){
             BF_PrintError("Error allocating block");
             return -1;
         }
         void *block;
-        printf("BF_blockCounter: %d\n", BF_GetBlockCounter(header_info.fileDesc));
-        if (BF_ReadBlock(header_info.fileDesc, BF_GetBlockCounter(header_info.fileDesc)-1, &block) < 0){
+        blockID = BF_GetBlockCounter(header_info.fileDesc)-1;
+        if (BF_ReadBlock(header_info.fileDesc, blockID, &block) < 0){
             BF_PrintError("Error reading block");
             return -1;
         }
-        //block-> void *, &block->void **
-        memcpy(previous_block + NEXT, &block, sizeof(void*));/*previous block points to this block*/
-        printf("previous block: %p\n", (previous_block));
-        printf("%p\n", *(void **)(previous_block+NEXT));
-        printf("%p\n", (block));
-        print_record( (Record)previous_block);
+        void *prev_block;
+        if (BF_ReadBlock(header_info.fileDesc, prev_blockID, &prev_block) < 0){
+            BF_PrintError("Error reading block");
+            return -1;
+        }
+
+        /*previous block points to this block*/
+        memcpy(prev_block + NEXT, &blockID, sizeof(int));
+        if (BF_WriteBlock(header_info.fileDesc, prev_blockID) < 0)
+            return -1;
+
         count = 1;
         memcpy(block + REC_NUM, &count, sizeof(int));
-
         memcpy(block, record, RECORD_SIZE);
 
-        block_num++;
+        count = -1;
+        memcpy(block + NEXT, &count, sizeof(int));
     }
     else {
+        void *block;
+        if (BF_ReadBlock(header_info.fileDesc, block_susID, &block) < 0){
+            BF_PrintError("Error reading block");
+            return -1;
+        }
         count++;
-        memcpy(block_sus + REC_NUM, &count, sizeof(int));
-        memcpy(block_sus+(count-1)*RECORD_SIZE, record, RECORD_SIZE);
+        memcpy(block + REC_NUM, &count, sizeof(int));
+        memcpy(block+(count-1)*RECORD_SIZE, record, RECORD_SIZE);
+
+        blockID = block_susID;
     }
 
-    if (BF_WriteBlock(header_info.fileDesc, block_num) < 0)
+    if (BF_WriteBlock(header_info.fileDesc, blockID) < 0)
         return -1;
-    return block_num;
+    return blockID;
 }
 
 int HP_DeleteEntry(HP_info header_info, void *value){
-    int block_num=0;
 
+    int count = 0;
+    int blockID = 1;
     void *current_block;
-    if (BF_ReadBlock(header_info.fileDesc, 0,  &current_block) < 0){
-        BF_PrintError("Error reading block");
-        return -1;
-    }
-    current_block = *(void **)(current_block + NEXT);
 
-    while ( block_num < BF_GetBlockCounter(header_info.fileDesc)-1) { //while (current_block != NULL)
-        block_num++;
+    while ( blockID != -1) { //while (current_block != NULL)
 
-        int count = *(int *)(current_block + REC_NUM);
-        // int count;
-        // memcpy(&count, current_block + REC_NUM, sizeof(int));
-   
+        if (BF_ReadBlock(header_info.fileDesc, blockID, &current_block) < 0){
+            BF_PrintError("Error reading block");
+            return -1;
+        }
+
+        count = *(int *)(current_block + REC_NUM);
+
         for (int j = 0; j < count; j++){
 
             Record current_rec = (current_block + j*RECORD_SIZE);
@@ -182,43 +199,43 @@ int HP_DeleteEntry(HP_info header_info, void *value){
                 memcpy(current_block + REC_NUM, &count, sizeof(int));
                 memcpy(current_block + j*RECORD_SIZE, last_rec, RECORD_SIZE);
 
-                if (BF_WriteBlock(header_info.fileDesc, block_num) < 0)
+                if (BF_WriteBlock(header_info.fileDesc, blockID) < 0)
                     return -1;
                 else return 0;
             }
+            blockID = *(int *)(current_block + NEXT);
         }
-        current_block = *(void **)(current_block + NEXT);
     }
     return -1;
 }
 
-int HP_GetAllEntries(HP_info header_info, void *value){
-    
-    void *current_block; 
-    int block_num = 0;
-    if (BF_ReadBlock(header_info.fileDesc, 0,  &current_block) < 0){
-        BF_PrintError("Error reading block");
-        return -1;
-    }
-    current_block = *(void **)(current_block + NEXT);
 
-    while ( block_num < BF_GetBlockCounter(header_info.fileDesc)-1) { //while (current_block != NULL)
-        block_num++;
-    
-        int count = *(int *)(current_block + REC_NUM);
-        // int count;
-        // memcpy(&count, current_block + REC_NUM, sizeof(int));
-        printf("%d\n",count);
-    
+int HP_GetAllEntries(HP_info header_info, void *value){
+
+    int count = 0;
+    int blockID = 1;
+    void *current_block;
+
+    while ( blockID != -1) { //while (current_block != NULL)
+
+        if (BF_ReadBlock(header_info.fileDesc, blockID, &current_block) < 0){
+            BF_PrintError("Error reading block");
+            return -1;
+        }
+
+        count = *(int *)(current_block + REC_NUM);
+
         for (int j = 0; j < count; j++){
+
             Record current_rec = current_block + j*RECORD_SIZE;
             void *current_key = get_key(current_rec, header_info.attrName);
+
             if (memcmp(value, current_key, header_info.attrLength) == 0){
                 print_record(current_rec);
-                return block_num;
+                return blockID;
             }
         }
-        current_block = *(void **)(current_block + NEXT);
+        blockID = *(int *)(current_block + NEXT);
     }
     return -1;
 }
