@@ -7,7 +7,7 @@
 
 int main(void){
     if (HP_CreateFile("test", 'i', "id", sizeof(int)) == 0)
-        printf("success\n");
+        printf("Created file\n");
     else printf("not\n");
 
     HP_info *info = HP_OpenFile("test");
@@ -30,7 +30,8 @@ int main(void){
     Record x;
     int countiter;
     while(fscanf(frecords, "{%d,\"%[^\",\"]\",\"%[^\",\"]\",\"%[^\"]\"}\n", &id, name, surname, address) != EOF){
-        if (HP_InsertEntry(*info ,x = create_record(id, name, surname, address))==-1){
+        x = create_record(id, name, surname, address);
+        if (HP_InsertEntry(*info ,x)==-1){
             printf("Record with id: %d could not entry\n", id);
         }
         free_record(x);
