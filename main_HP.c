@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "./headers/HP.h"
-#include "./headers/Record.h"
+#include "headers/HP.h"
+#include "headers/Record.h"
 
 int main(void){
     if (HP_CreateFile("test", 'i', "id", sizeof(int)) == 0)

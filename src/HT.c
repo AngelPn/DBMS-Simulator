@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "./headers/HT.h"
-#include "./headers/BF.h"
+#include "../headers/HT.h"
+#include "../headers/BF.h"
 
 #define NEXT_BUCKET BLOCK_SIZE-sizeof(int)-1
 #define NEXT        BLOCK_SIZE-2*sizeof(int)-1
