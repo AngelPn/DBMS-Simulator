@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "HT.h"
-#include "Record.h"
+#include "./headers/HT.h"
+#include "./headers/Record.h"
 
 int main(void){
     if (HT_CreateIndex("test", 'i', "id", sizeof(int), 150) == 0)

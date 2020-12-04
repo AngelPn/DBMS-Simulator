@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "HP.h"
-#include "BF.h"
+#include "./headers/HP.h"
+#include "./headers/BF.h"
 
 #define NEXT BLOCK_SIZE-2*sizeof(int)-1
 #define REC_NUM BLOCK_SIZE-sizeof(int)-1
