@@ -9,11 +9,11 @@ int main(void){
     if (HT_CreateIndex("test", 'i', "id", sizeof(int), 150) == 0)
         printf("Created index\n");
     else printf("not\n");
-    HT_info *info = HT_OpenFile("test");
+    HT_info *info = HT_OpenIndex("test");
     if (info != NULL)
-        printf("%d %c %s %d %d\n", info->fileDesc, info->attrType, info->attrName, info->attrLength, info->numBuckets);
+        printf("%d %c %s %d %ld\n", info->fileDesc, info->attrType, info->attrName, info->attrLength, info->numBuckets);
 
-    if (HP_CloseFile(info) < 0)
+    if (HT_CloseIndex(info) < 0)
         printf("not\n");
     else printf("success\n");
 }

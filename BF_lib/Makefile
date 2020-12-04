@@ -1,49 +1,36 @@
-# #paths
-# INCLUDE = ../BF_lib
-# SRC = ../BF_lib
-# LDIR = ../BF_lib
+#paths
+INCLUDE = ../BF_lib
+SRC = ../BF_lib
+LDIR = ../BF_lib
 
-# #compiler
-# CC = gcc
+#compiler
+CC = gcc
 
-# #compile options
-# CFLAGS = -I$(INCLUDE)
-# LIBS = $(LDIR)/BF_64.a
-# OBJS = $(SRC)/HP.o $(SRC)/Record.o  $(SRC)/mainHT.o  $(SRC)/HT.o
-
-# EXEC = ex
-
-# %.o: %.c $(INCLUDE)
-# 	$(CC) -c -o $@ $< $(CFLAGS)
-
-# $(EXEC): $(OBJS)
-# 	$(CC) -o $@ $(OBJS) -no-pie $(LIBS)
-
-# clean:
-# 	find . -type f -not -name '*c' -not -name '*h' -not -name '*a' -not -name 'Makefile' -delete
-# 	#rm -f $(OBJS) $(EXEC)
-	
-# run: $(EXEC)
-# 	./$(EXEC)
-CC=gcc
-CFLAGS=
-DEPS = HT.h Record.h HP.c
+#compile options
+CFLAGS = -Wall -g -I$(INCLUDE)
+VALFLAGS = --leak-check=full --show-leak-kinds=all --track-origins=yes
+LIBS = $(LDIR)/BF_64.a
 TARGETS = main mainHT
-VALFLAGS = --leak-check=full --show-leak-kinds=all --track-origins=yes \
+OTHER_OBJS = $(SRC)/HP.o $(SRC)/Record.o $(SRC)/HT.o
 
-.PHONY: clean all
+EXEC = ex
 
-%.o: %.c $(DEPS)
+%.o: %.c $(INCLUDE)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 all: $(TARGETS)
 
-$(TARGETS): %: %.c Record.c HT.c
-	$(CC) -Wall -g -o $@ $<  Record.c HT.c HP.c BF_64.a -no-pie  $(CFLAGS)
+# $(TARGETS): %: %.c Record.c HT.c
+# 	$(CC) -Wall -g -o $@ $<  Record.c HT.c HP.c BF_64.a -no-pie  $(CFLAGS)
+
+main: main.o $(OTHER_OBJS)
+	$(CC) -o $@ main.o $(OTHER_OBJS) -no-pie $(LIBS)
+
+mainHT: mainHT.o $(OTHER_OBJS)
+	$(CC) -o $@ mainHT.o $(OTHER_OBJS) -no-pie $(LIBS)
 
 valgrind:
 	valgrind ${VALFLAGS} 
 
 clean:
 	find . -type f -not -name '*c' -not -name '*h' -not -name '*a' -not -name 'Makefile' -delete
-	rm -f $(TARGETS)

@@ -102,7 +102,7 @@ int HT_CreateIndex( char *fileName, char attrType, char* attrName,int attrLength
     return 0;
 }
 
-HT_info *HT_OpenFile(char *fileName){
+HT_info *HT_OpenIndex(char *fileName){
     int fileDesk = 0;
     if (fileDesk = BF_OpenFile(fileName) < 0){
         BF_PrintError("Error opening file");
@@ -123,7 +123,7 @@ HT_info *HT_OpenFile(char *fileName){
     return info;
 }
 
-int HT_CloseFile(HT_info *header_info){
+int HT_CloseIndex(HT_info *header_info){
     if (BF_CloseFile(header_info->fileDesc) < 0){
         BF_PrintError("Error closing file");
         return -1;
