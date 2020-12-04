@@ -9,6 +9,7 @@ typedef struct HP_info
     char attrType; //type of key
     char *attrName; //name of key
     int attrLength; //size of key
+    int header_block_ID; //block ID of header block
 } HP_info;
 
 

@@ -9,6 +9,7 @@ typedef struct HT_info{
     char *attrName; //name of key
     int attrLength; //size of key
     long int numBuckets;
+    int header_block_ID; //block ID of header block
 } HT_info;
 
 int HT_CreateIndex( char *fileName, char attrType, char* attrName,int attrLength, int buckets);

@@ -28,7 +28,7 @@ int HP_CreateFile(char *fileName, char attrType, char *attrName, int attrLength)
     }
     /*Read the header block and take the address*/
     void *header_block = NULL;
-    if (BF_ReadBlock(fileDesc, 0, &header_block) < 0){
+    if (BF_ReadBlock(fileDesc, BF_GetBlockCounter(fileDesc) - 1, &header_block) < 0){
         BF_PrintError("Error reading block");
         return -1;
     }
@@ -36,7 +36,8 @@ int HP_CreateFile(char *fileName, char attrType, char *attrName, int attrLength)
     HP_info info = {.fileDesc = fileDesc,
                     .attrType = attrType, 
                     .attrName = malloc(sizeof(char)*(strlen(attrName)+1)),
-                    .attrLength = attrLength
+                    .attrLength = attrLength,
+                    .header_block_ID = BF_GetBlockCounter(fileDesc) - 1
                     };
     strcpy(info.attrName, attrName);
     memcpy(header_block, &info, sizeof(HP_info));
@@ -91,7 +92,7 @@ int HP_InsertEntry(HP_info header_info, Record record){
     int prev_blockID = 0;
     void *current_block;
 
-    if (BF_ReadBlock(header_info.fileDesc, blockID, &current_block) < 0){
+    if (BF_ReadBlock(header_info.fileDesc, header_info.header_block_ID, &current_block) < 0){
         BF_PrintError("Error reading block");
         return -1;
     }
