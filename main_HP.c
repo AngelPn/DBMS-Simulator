@@ -16,7 +16,7 @@ int main(void){
 
     FILE *frecords;
     /*Open the file "records1K.txt" and read it*/
-    frecords = fopen("../record_examples/records1K.txt","r");
+    frecords = fopen("./record_examples/records1K.txt","r");
     if (frecords == NULL){
         printf("Error: fopen() failed\n");
         exit(EXIT_FAILURE);

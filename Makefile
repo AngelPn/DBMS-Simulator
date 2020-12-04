@@ -33,5 +33,9 @@ main_HT: main_HT.o $(HT_OBJS)
 valgrind:
 	valgrind ${VALFLAGS} 
 
-clean:
-	find . -type f -not -name '*c' -not -name '*h' -not -name '*a' -not -name 'Makefile' -delete
+clean_HP:
+	rm -f main_HP.o $(HP_OBJS) main_HP test
+	#find . -type f -not -name '*c' -not -name '*h' -not -name '*a' -not -name 'Makefile' -delete
+
+clean_HT:
+	rm -f main_HT.o $(HT_OBJS) main_HT test
