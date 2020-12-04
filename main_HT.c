@@ -21,5 +21,5 @@ int main(void){
         printf("not\n");
     else printf("success\n");
 
-    printf("%d\n", 120/127);
+    printf("%d\n", 150%127);
 }

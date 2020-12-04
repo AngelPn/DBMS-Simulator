@@ -10,32 +10,29 @@
 #define NEXT        BLOCK_SIZE-2*sizeof(int)-1
 #define REC_NUM     BLOCK_SIZE-sizeof(int)-1
 
-int HT_CreateIndex( char *fileName, char attrType, char* attrName,int attrLength, int buckets ) 
-{
+int HT_CreateIndex(char *fileName, char attrType, char* attrName,int attrLength, int buckets){
     BF_Init();
-    // Create file in block - level
-    if (BF_CreateFile(fileName) < 0) {
+    /*Create file in block - level*/
+    if (BF_CreateFile(fileName) < 0){
 		BF_PrintError("Error creating file");
-		exit(EXIT_FAILURE);
+		return -1;
 	}
-
-    // Open the created file in block - level and get the file identifier
+    /*Open the created file in block - level and get the file identifier*/
     int fileDesc;
     if (fileDesc = BF_OpenFile(fileName) < 0){
         BF_PrintError("Error opening file");
-        exit(EXIT_FAILURE);
+        return -1;
     }
-
-    // Allocate the header block
+    /*Allocate the header block that keeps the HP_info*/
     if (BF_AllocateBlock(fileDesc) < 0){
         BF_PrintError("Error allocating block");
-        exit(EXIT_FAILURE);
+        return -1;
     }
-
-    void *block = NULL;
-    if (BF_ReadBlock(fileDesc, BF_GetBlockCounter(fileDesc) - 1, &block) < 0){
+    /*Read the header block and take the address*/
+    void *header_block = NULL;
+    if (BF_ReadBlock(fileDesc, BF_GetBlockCounter(fileDesc) - 1, &header_block) < 0){
         BF_PrintError("Error reading block");
-        exit(EXIT_FAILURE);
+        return -1;
     }
     HT_info info = {.fileDesc = fileDesc,
                     .attrType = attrType, 
@@ -45,69 +42,54 @@ int HT_CreateIndex( char *fileName, char attrType, char* attrName,int attrLength
                     .header_block_ID = BF_GetBlockCounter(fileDesc) - 1
                     };
     strcpy(info.attrName, attrName);
-    memcpy(block, &info, sizeof(HT_info));
-    //free(info.attrName);
-    
-    if (BF_WriteBlock(fileDesc, 0) < 0)
+    memcpy(header_block, &info, sizeof(HT_info));
+    if (BF_WriteBlock(fileDesc, BF_GetBlockCounter(fileDesc) - 1) < 0)
         return -1;
 
-    int n_blocks = buckets*sizeof(int)/(BLOCK_SIZE-sizeof(int));
+    /* Calculate the number of blocks of buckets needed and the remainder*/
+    int n_bucket_blocks = buckets*sizeof(int)/(BLOCK_SIZE-sizeof(int));
     int remainder = (buckets*sizeof(int))%(BLOCK_SIZE-sizeof(int));
+    if (remainder > 0)
+        n_bucket_blocks++;
    
     void *curr_block = NULL;
-    void *prev_block = block;
-    int blockID;
+    void *prev_block = header_block;
+    int bucket_blockID;
     int prev_blockID = BF_GetBlockCounter(fileDesc) - 1;
     
-    for (int i = 1; i <= n_blocks; i++)
-    {    
+    for (int i = 1; i <= n_bucket_blocks; i++){
+        /*Allocate a block of buckets*/
         if (BF_AllocateBlock(fileDesc) < 0){
             BF_PrintError("Error allocating block");
             exit(EXIT_FAILURE);
         }
-        blockID = BF_GetBlockCounter(fileDesc)-1;
-        if (BF_ReadBlock(fileDesc, blockID, &curr_block) < 0){
+        /*Read the block of buckets and take the address*/
+        bucket_blockID = BF_GetBlockCounter(fileDesc)-1;
+        if (BF_ReadBlock(fileDesc, bucket_blockID, &curr_block) < 0){
             BF_PrintError("Error reading block");
             exit(EXIT_FAILURE);
         }
-
-        memcpy(prev_block + NEXT_BUCKET, &blockID, sizeof(int));
+        /*Point the previous block to the new block*/
+        memcpy(prev_block + NEXT_BUCKET, &bucket_blockID, sizeof(int));
         if (BF_WriteBlock(fileDesc, prev_blockID) < 0)
             return -1;
 
+        int n_buckets;
+        if (i == n_bucket_blocks && remainder > 0)
+            n_buckets = remainder;
+        else
+            n_buckets = (BLOCK_SIZE/sizeof(int)-1);
+        /*Initialize buckets with empty pointers to blocks: -1*/
         int count = -1;
-        for (int j = 0; j < (BLOCK_SIZE/sizeof(int)-1); j++) {
-            memcpy(curr_block+j*sizeof(int), &count, sizeof(int));
+        for (int j = 0; j < n_buckets; j++) {
+            memcpy(curr_block + j*sizeof(int), &count, sizeof(int));
         }
-        if (BF_WriteBlock(fileDesc,blockID) < 0)
+        if (BF_WriteBlock(fileDesc, bucket_blockID) < 0)
             return -1;
 
         prev_block = curr_block;
-        prev_blockID = blockID;
+        prev_blockID = bucket_blockID;
     }
-    if (remainder > 0){
-        int j;
-        if (BF_AllocateBlock(fileDesc) < 0){
-            BF_PrintError("Error allocating block");
-            exit(EXIT_FAILURE);
-        }
-        blockID = BF_GetBlockCounter(fileDesc)-1;
-        if (BF_ReadBlock(fileDesc, blockID , &curr_block) < 0){
-            BF_PrintError("Error reading block");
-            exit(EXIT_FAILURE);
-        }
-        memcpy(prev_block + NEXT_BUCKET, &blockID, sizeof(int));
-        if (BF_WriteBlock(fileDesc, prev_blockID) < 0)
-            return -1;
-
-        int count = -1;
-        for (j = 0; j < remainder; j++)
-            memcpy(curr_block+j*sizeof(int), &count, sizeof(int));
-        }
-        if (BF_WriteBlock(fileDesc, 0) < 0)
-            return -1;
-    }
-    // printf("%d\n", BF_GetBlockCounter(fileDesc));
     return 0;
 }
 

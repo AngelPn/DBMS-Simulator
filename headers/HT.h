@@ -3,8 +3,9 @@
 
 #include "Record.h"
 
-typedef struct HT_info{
-   int fileDesc;
+typedef struct HT_info
+{
+    int fileDesc;
     char attrType; //type of key
     char *attrName; //name of key
     int attrLength; //size of key
