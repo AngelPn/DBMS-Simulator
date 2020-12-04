@@ -10,81 +10,70 @@
 
 int HP_CreateFile(char *fileName, char attrType, char *attrName, int attrLength){
     BF_Init();
-    // Create file in block - level
+    /*Create file in block - level*/
     if (BF_CreateFile(fileName) < 0) {
 		BF_PrintError("Error creating file");
-		exit(EXIT_FAILURE);
+		return -1;
 	}
-
-    // Open the created file in block - level and get the file identifier
+    /*Open the created file in block - level and get the file identifier*/
     int fileDesc;
     if (fileDesc = BF_OpenFile(fileName) < 0){
         BF_PrintError("Error opening file");
-        exit(EXIT_FAILURE);
+        return -1;
     }
-
-    // Allocate the header block
+    /*Allocate the header block that keeps the HP_info*/
     if (BF_AllocateBlock(fileDesc) < 0){
         BF_PrintError("Error allocating block");
-        exit(EXIT_FAILURE);
+        return -1;
     }
-
-    void *block = NULL;
-    if (BF_ReadBlock(fileDesc, 0, &block) < 0){
+    /*Read the header block and take the address*/
+    void *header_block = NULL;
+    if (BF_ReadBlock(fileDesc, 0, &header_block) < 0){
         BF_PrintError("Error reading block");
-        exit(EXIT_FAILURE);
+        return -1;
     }
+    /*Create the HP_info struct and save it to header_block*/
     HP_info info = {.fileDesc = fileDesc,
                     .attrType = attrType, 
                     .attrName = malloc(sizeof(char)*(strlen(attrName)+1)),
                     .attrLength = attrLength
                     };
     strcpy(info.attrName, attrName);
-    memcpy(block, &info, sizeof(HP_info));
-    //free(info.attrName);
-
-    // Next block empty: -1
+    memcpy(header_block, &info, sizeof(HP_info));
+    /*Represent that next block is empty with -1*/
     int count = -1;
-    memcpy(block + NEXT, &count, sizeof(int));
-
+    memcpy(header_block + NEXT, &count, sizeof(int));
+    
     if (BF_WriteBlock(fileDesc, 0) < 0)
         return -1;
     else return 0;
 }
 
+
 HP_info *HP_OpenFile(char *fileName){
+    /*Get the file identifier with BF_OpenFile*/
     int fileDesk = 0;
     if (fileDesk = BF_OpenFile(fileName) < 0){
         BF_PrintError("Error opening file");
-		exit(EXIT_FAILURE);
+		return NULL;
     }
+    /*Read the header_block*/
     void *header_block = NULL;
     if (BF_ReadBlock(fileDesk, 0, &header_block) < 0){
         BF_PrintError("Error reading block");
-        exit(EXIT_FAILURE);
+        return NULL;
     }
-    HP_info *header_info = (HP_info *)header_block;
-
+    /*Allocate HP_info struct*/
     HP_info *info = (HP_info *)malloc(sizeof(HP_info));
-    printf("header_info->attrName = %s\n", header_info->attrName);
-    // info->attrName = malloc(sizeof(char)*(strlen(header_info->attrName) + 1));
-    // strcpy(info->attrName, header_info->attrName);
-    // info->fileDesc = header_info->fileDesc;
-    // info->attrType = header_info->attrType;
-    // info->attrLength = header_info->attrLength;
-    memcpy(info, header_block, sizeof(HP_info));
+    
+    HP_info *header_info = (HP_info *)header_block;
+    memcpy(info, header_info, sizeof(HP_info));
 
     return info;
 }
 
+
 int HP_CloseFile(HP_info *header_info){
-    // void *header_block;
-    // if (BF_ReadBlock(header_info->fileDesc, 0, &header_block) < 0){
-    //     BF_PrintError("Error reading block");
-    //     return -1;
-    // }
-    // HP_info *info = (HP_info *)header_block;
-    // free(info->attrName);
     if (BF_CloseFile(header_info->fileDesc) < 0){
         BF_PrintError("Error closing file");
         return -1;
