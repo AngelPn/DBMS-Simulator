@@ -93,26 +93,29 @@ int HT_CreateIndex(char *fileName, char attrType, char* attrName,int attrLength,
     return 0;
 }
 
+
 HT_info *HT_OpenIndex(char *fileName){
+    /*Get the file identifier with BF_OpenFile*/
     int fileDesc = 0;
     if (fileDesc = BF_OpenFile(fileName) < 0){
         BF_PrintError("Error opening file");
 		exit(EXIT_FAILURE);
     }
+    /*Read the header_block*/
     void *header_block = NULL;
     if (BF_ReadBlock(fileDesc, 0, &header_block) < 0){
         BF_PrintError("Error reading block");
         exit(EXIT_FAILURE);
     }
-    HT_info *header_info = (HT_info *)header_block;
-
+    /*Allocate HT_info struct*/
     HT_info *info = (HT_info *)malloc(sizeof(HT_info));
-    printf("header_info->attrName = %s\n", header_info->attrName);
-    
+
+    HT_info *header_info = (HT_info *)header_block;
     memcpy(info, header_block, sizeof(HT_info));
 
     return info;
 }
+
 
 int HT_CloseIndex(HT_info *header_info){
     if (BF_CloseFile(header_info->fileDesc) < 0){
@@ -123,6 +126,7 @@ int HT_CloseIndex(HT_info *header_info){
     free(header_info);
     return 0;
 }
+
 
 int hash(long int nbuckets, void *key){
     int k = *(int *)key;
@@ -135,6 +139,7 @@ int hash(long int nbuckets, void *key){
 
     return index;
 }
+
 
 int HT_InsertEntry(HT_info header_info, Record record){
 
