@@ -1,7 +1,7 @@
 #paths
-INCLUDE = ../BF_lib
-SRC = ../BF_lib
-LDIR = ../BF_lib
+INCLUDE = ./headers
+SRC = ./src
+LDIR = ./BF_lib
 
 #compiler
 CC = gcc
@@ -10,8 +10,9 @@ CC = gcc
 CFLAGS = -Wall -g -I$(INCLUDE)
 VALFLAGS = --leak-check=full --show-leak-kinds=all --track-origins=yes
 LIBS = $(LDIR)/BF_64.a
-TARGETS = main mainHT
-OTHER_OBJS = $(SRC)/HP.o $(SRC)/Record.o $(SRC)/HT.o
+TARGETS = main_HP main_HT
+HP_OBJS = $(SRC)/HP.o $(SRC)/Record.o
+HT_OBJS = $(SRC)/HT.o $(SRC)/Record.o
 
 EXEC = ex
 
@@ -23,11 +24,11 @@ all: $(TARGETS)
 # $(TARGETS): %: %.c Record.c HT.c
 # 	$(CC) -Wall -g -o $@ $<  Record.c HT.c HP.c BF_64.a -no-pie  $(CFLAGS)
 
-main: main.o $(OTHER_OBJS)
-	$(CC) -o $@ main.o $(OTHER_OBJS) -no-pie $(LIBS)
+main_HP: main_HP.o $(HP_OBJS)
+	$(CC) -o $@ main_HP.o $(HP_OBJS) -no-pie $(LIBS)
 
-mainHT: mainHT.o $(OTHER_OBJS)
-	$(CC) -o $@ mainHT.o $(OTHER_OBJS) -no-pie $(LIBS)
+main_HT: main_HT.o $(HT_OBJS)
+	$(CC) -o $@ main_HT.o $(HT_OBJS) -no-pie $(LIBS)
 
 valgrind:
 	valgrind ${VALFLAGS} 
