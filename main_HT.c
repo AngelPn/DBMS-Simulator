@@ -13,9 +13,36 @@ int main(void){
     if (info != NULL)
         printf("%d %c %s %d %ld\n", info->fileDesc, info->attrType, info->attrName, info->attrLength, info->numBuckets);
 
-    Record rec = create_record(5, "nikos", "ppppp", "agiou georgiou");
-    HT_InsertEntry(*info, rec);
+    FILE *frecords;
+    /*Open the file "records1K.txt" and read it*/
+    frecords = fopen("./examples/records1K.txt","r");
+    if (frecords == NULL){
+        printf("Error: fopen() failed\n");
+        exit(EXIT_FAILURE);
+    }
+    //fseek(frecords, 0, SEEK_SET);
     
+    int id;
+    char name[15];
+    char surname[25];
+    char address[50];
+    Record x;
+    int countiter;
+    while(fscanf(frecords, "{%d,\"%[^\",\"]\",\"%[^\",\"]\",\"%[^\"]\"}\n", &id, name, surname, address) != EOF){
+        x = create_record(id, name, surname, address);
+        if (HT_InsertEntry(*info ,x)==-1){
+            printf("Record with id: %d could not entry\n", id);
+        }
+        free_record(x);
+        if (countiter > 1000) break;
+        countiter++;
+    }
+
+    fclose(frecords);
+
+    int key = 54;
+    HT_GetAllEntries(*info, &key);
+    HT_DeleteEntry(*info, &key);
 
     if (HT_CloseIndex(info) < 0)
         printf("not\n");

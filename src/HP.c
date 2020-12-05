@@ -5,8 +5,8 @@
 #include "../include/HP.h"
 #include "../include/BF.h"
 
-#define NEXT BLOCK_SIZE-2*sizeof(int)-1
-#define REC_NUM BLOCK_SIZE-sizeof(int)-1
+#define NEXT    BLOCK_SIZE-2*sizeof(int)
+#define REC_NUM BLOCK_SIZE-sizeof(int)
 
 int HP_CreateFile(char *fileName, char attrType, char *attrName, int attrLength){
     BF_Init();

@@ -6,9 +6,9 @@
 #include "../include/HT.h"
 #include "../include/BF.h"
 
-#define NEXT_BUCKET BLOCK_SIZE-sizeof(int)-1
-#define NEXT        BLOCK_SIZE-2*sizeof(int)-1
-#define REC_NUM     BLOCK_SIZE-sizeof(int)-1
+#define NEXT_BUCKET BLOCK_SIZE-sizeof(int)
+#define NEXT        BLOCK_SIZE-2*sizeof(int)
+#define REC_NUM     BLOCK_SIZE-sizeof(int)
 
 int HT_CreateIndex(char *fileName, char attrType, char* attrName,int attrLength, int buckets){
     BF_Init();
@@ -78,7 +78,7 @@ int HT_CreateIndex(char *fileName, char attrType, char* attrName,int attrLength,
         if (i == n_bucket_blocks && remainder > 0)
             n_buckets = remainder;
         else
-            n_buckets = (BLOCK_SIZE/sizeof(int)-1);
+            n_buckets = (BLOCK_SIZE-sizeof(int))/sizeof(int);
         /*Initialize buckets with empty pointers to blocks: -1*/
         int count = -1;
         for (int j = 0; j < n_buckets; j++) {
@@ -145,21 +145,24 @@ int HT_InsertEntry(HT_info header_info, Record record){
 
     void *key = get_key(record, header_info.attrName);
     int index = hash(header_info.numBuckets, key);
-    printf("index = %d\n", index);
+    printf("index = %d\t", index);
 
     int nbuckets_in_block = BLOCK_SIZE/sizeof(int) - 1; //127
+    /*block ID that keeps the bucket index*/
     int blockID_bucket = index/nbuckets_in_block + 1; //+1 because of header block
-    printf("blockID_bucket = %d\n", blockID_bucket);
+    printf("blockID_bucket = %d\t", blockID_bucket);
 
     void *bucket_block = NULL;
     if (BF_ReadBlock(header_info.fileDesc, blockID_bucket, &bucket_block) < 0){
         BF_PrintError("Error reading block");
         return -1;
     }
-
-    int blockID = *(int *)(bucket_block + sizeof(int)*abs((index-1) - nbuckets_in_block*(blockID_bucket-1)) -1);
+    int pointer = index%nbuckets_in_block;
+    //int blockID = *(int *)(bucket_block + sizeof(int)*abs((index-1) - nbuckets_in_block*(blockID_bucket-1)) -1);
+    int blockID = *(int *)(bucket_block + pointer*sizeof(int));
     printf("blockID = %d\n", blockID);
  
+    index = pointer*sizeof(int);
     int block_susID = -1;
     int count = 0;
     int prev_blockID = blockID_bucket;
@@ -191,6 +194,7 @@ int HT_InsertEntry(HT_info header_info, Record record){
         }
         prev_blockID = blockID;
         blockID = *(int *)(current_block + NEXT);
+        index = NEXT;
     }
 
     if (block_susID == -1){ /*if all previous blocks are full*/
@@ -211,7 +215,7 @@ int HT_InsertEntry(HT_info header_info, Record record){
         }
 
         /*previous block points to this block*/
-        memcpy(prev_block + NEXT, &blockID, sizeof(int));
+        memcpy(prev_block + index, &blockID, sizeof(int));
         if (BF_WriteBlock(header_info.fileDesc, prev_blockID) < 0)
             return -1;
 
@@ -239,4 +243,167 @@ int HT_InsertEntry(HT_info header_info, Record record){
         return -1;
     return blockID;
 
+}
+
+int HT_DeleteEntry(HT_info header_info, void *value){
+    printf("DELETE\n");
+    int index = hash(header_info.numBuckets, value);
+    printf("index = %d\t", index);
+
+    int nbuckets_in_block = BLOCK_SIZE/sizeof(int) - 1; //127
+    /*block ID that keeps the bucket index*/
+    int blockID_bucket = index/nbuckets_in_block + 1; //+1 because of header block
+    printf("blockID_bucket = %d\t", blockID_bucket);
+
+    void *bucket_block = NULL;
+    if (BF_ReadBlock(header_info.fileDesc, blockID_bucket, &bucket_block) < 0){
+        BF_PrintError("Error reading block");
+        return -1;
+    }
+    int pointer = index%nbuckets_in_block;
+    //int blockID = *(int *)(bucket_block + sizeof(int)*abs((index-1) - nbuckets_in_block*(blockID_bucket-1)) -1);
+    int blockID = *(int *)(bucket_block + pointer*sizeof(int));
+    printf("blockID = %d\n", blockID);
+
+    int count = 0;
+    void *current_block;
+
+    while ( blockID != -1) { //while (current_block != NULL)
+
+        if (BF_ReadBlock(header_info.fileDesc, blockID, &current_block) < 0){
+            BF_PrintError("Error reading block");
+            return -1;
+        }
+
+        count = *(int *)(current_block + REC_NUM);
+
+        for (int j = 0; j < count; j++){
+
+            Record current_rec = (current_block + j*RECORD_SIZE);
+            void *current_key = get_key(current_rec, header_info.attrName);
+
+            if (memcmp(value, current_key, header_info.attrLength) == 0){
+
+                Record last_rec = (current_block + count*RECORD_SIZE);
+
+                count--;
+                memcpy(current_block + REC_NUM, &count, sizeof(int));
+                memcpy(current_block + j*RECORD_SIZE, last_rec, RECORD_SIZE);
+
+                if (BF_WriteBlock(header_info.fileDesc, blockID) < 0)
+                    return -1;
+                else return 0;
+            }
+            blockID = *(int *)(current_block + NEXT);
+        }
+    }
+    return -1;
+}
+
+int HT_GetAllEntries(HT_info header_info, void *value){
+    printf("GET ENTRY\n");
+    int index = hash(header_info.numBuckets, value);
+    printf("index = %d\t", index);
+
+    int nbuckets_in_block = BLOCK_SIZE/sizeof(int) - 1; //127
+    /*block ID that keeps the bucket index*/
+    int blockID_bucket = index/nbuckets_in_block + 1; //+1 because of header block
+    printf("blockID_bucket = %d\t", blockID_bucket);
+
+    void *bucket_block = NULL;
+    if (BF_ReadBlock(header_info.fileDesc, blockID_bucket, &bucket_block) < 0){
+        BF_PrintError("Error reading block");
+        return -1;
+    }
+    int pointer = index%nbuckets_in_block;
+    //int blockID = *(int *)(bucket_block + sizeof(int)*abs((index-1) - nbuckets_in_block*(blockID_bucket-1)) -1);
+    int blockID = *(int *)(bucket_block + pointer*sizeof(int));
+    printf("blockID = %d\n", blockID);
+
+    int count = 0;
+    void *current_block;
+
+    while ( blockID != -1) { //while (current_block != NULL)
+
+        if (BF_ReadBlock(header_info.fileDesc, blockID, &current_block) < 0){
+            BF_PrintError("Error reading block");
+            return -1;
+        }
+
+        count = *(int *)(current_block + REC_NUM);
+
+        for (int j = 0; j < count; j++){
+
+            Record current_rec = current_block + j*RECORD_SIZE;
+            void *current_key = get_key(current_rec, header_info.attrName);
+
+            if (memcmp(value, current_key, header_info.attrLength) == 0){
+                print_record(current_rec);
+                return blockID;
+            }
+        }
+        blockID = *(int *)(current_block + NEXT);
+    }
+    return -1;
+}
+
+
+int HashStatistics(char *filename){
+    HT_info *info  = HT_OpenIndex(filename);
+
+     /*How many blocks has the file*/
+    int nblocks = BF_GetBlockCounter(info->fileDesc);
+
+    /*File parsing*/
+    void *header_block = NULL;
+    if (BF_ReadBlock(info->fileDesc, info->header_block_ID, &header_block) < 0){
+        BF_PrintError("Error reading block");
+        return -1;
+    }
+
+    int blockID_bucket = *(int *)(header_block + NEXT_BUCKET);
+    void *bucket_block  = NULL;
+
+    /* Calculate the number of blocks of buckets and the remainder*/
+    int n_bucket_blocks = info->numBuckets*sizeof(int)/(BLOCK_SIZE-sizeof(int));
+    int remainder = (info->numBuckets*sizeof(int))%(BLOCK_SIZE-sizeof(int));
+    if (remainder > 0)
+        n_bucket_blocks++;
+
+    for (int i = 0; i < n_bucket_blocks; i++){
+        
+        if (BF_ReadBlock(info->fileDesc, blockID_bucket, &bucket_block) < 0){
+            BF_PrintError("Error reading block");
+            return -1;
+        }
+
+        int n_buckets;
+        if (i == n_bucket_blocks && remainder > 0)
+            n_buckets = remainder;
+        else
+            n_buckets = (BLOCK_SIZE-sizeof(int))/sizeof(int);
+        /*Initialize buckets with empty pointers to blocks: -1*/
+        int count = 0, pointer, blockID;
+        void *current_block = NULL;
+
+        for (int j = 0; j < n_buckets; j++) {
+
+            pointer = j%n_bucket_blocks;
+            blockID = *(int *)(bucket_block + pointer*sizeof(int));
+
+            while ( blockID != -1) { //while (current_block != NULL)
+
+                if (BF_ReadBlock(info->fileDesc, blockID, &current_block) < 0){
+                    BF_PrintError("Error reading block");
+                    return -1;
+                }
+
+                count = *(int *)(current_block + REC_NUM);
+
+                blockID = *(int *)(current_block + NEXT);
+            }
+        }
+
+        blockID_bucket = *(int *)(bucket_block + NEXT_BUCKET);
+    }
 }
