@@ -29,6 +29,8 @@ $(ODIR)/%.o: %.c $(DEPS)
 # $(TARGETS): %: %.c HT.c HP.c Record.c
 # 	$(CC) -o $@ $< HT.c HP.c Record.c -no-pie $(LIBS)
 
+all: $(TARGETS)
+
 main_HP: $(HPOBJS)
 	$(CC) -o $@ $^ -no-pie $(LIBS)
 
