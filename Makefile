@@ -1,7 +1,7 @@
 #paths
-INCLUDE = ./headers
+INCLUDE = ./include
 SRC = ./src
-LDIR = ./BF_lib
+LDIR = ./lib
 
 #compiler
 CC = gcc

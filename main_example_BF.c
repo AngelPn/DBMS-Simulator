@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "headers/BF.h"
+#include "include/BF.h"
 
 #define FILENAME "file"
 #define MAX_FILES 100

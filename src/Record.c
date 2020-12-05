@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../headers/Record.h"
+#include "../include/Record.h"
 
 struct record
 {

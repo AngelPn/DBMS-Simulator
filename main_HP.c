@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "headers/HP.h"
-#include "headers/Record.h"
+#include "include/HP.h"
+#include "include/Record.h"
 
 int main(void){
     if (HP_CreateFile("test", 'i', "id", sizeof(int)) == 0)
@@ -16,7 +16,7 @@ int main(void){
 
     FILE *frecords;
     /*Open the file "records1K.txt" and read it*/
-    frecords = fopen("./record_examples/records1K.txt","r");
+    frecords = fopen("./examples/records1K.txt","r");
     if (frecords == NULL){
         printf("Error: fopen() failed\n");
         exit(EXIT_FAILURE);
