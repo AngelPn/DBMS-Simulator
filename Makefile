@@ -37,6 +37,8 @@ main_HP: $(HPOBJS)
 main_HT: $(HTOBJS)
 	$(CC) -o $@ $^ -no-pie $(LIBS)
 
+clean: clean_HP clean_HT
+
 clean_HP:
 	rm -f $(ODIR)/*.o $(ODIR)/$(SRC)/*.o main_HP test
 	#find . -type f -not -name '*c' -not -name '*h' -not -name '*a' -not -name 'Makefile' -delete

@@ -48,10 +48,12 @@ int HT_CreateIndex(char *fileName, char attrType, char* attrName,int attrLength,
 
     /* Calculate the number of blocks of buckets needed and the remainder*/
     int n_bucket_blocks = buckets*sizeof(int)/(BLOCK_SIZE-sizeof(int));
-    int remainder = (buckets*sizeof(int))%(BLOCK_SIZE-sizeof(int));
-    if (remainder > 0)
+    int remainder_size = (buckets*sizeof(int))%(BLOCK_SIZE-sizeof(int));
+    int remainder = remainder_size/sizeof(int);
+    if (remainder_size > 0)
         n_bucket_blocks++;
-   
+    printf("CREATE: remainder %d \n", remainder);
+
     void *curr_block = NULL;
     void *prev_block = header_block;
     int bucket_blockID;
@@ -350,9 +352,13 @@ int HT_GetAllEntries(HT_info header_info, void *value){
 
 int HashStatistics(char *filename){
     HT_info *info  = HT_OpenIndex(filename);
-
      /*How many blocks has the file*/
     int nblocks = BF_GetBlockCounter(info->fileDesc);
+
+    int min_recs = 1000, max_recs = -1;
+    int total_recs = 0;
+    int total_blocks_bucket = 0;
+    int overflow_buckets = 0, overflow_blocks;
 
     /*File parsing*/
     void *header_block = NULL;
@@ -370,7 +376,8 @@ int HashStatistics(char *filename){
     if (remainder > 0)
         n_bucket_blocks++;
 
-    for (int i = 0; i < n_bucket_blocks; i++){
+    int bucket_index = 0;
+    for (int i = 0; i < n_bucket_blocks; i++){ /*for every block of buckets*/
         
         if (BF_ReadBlock(info->fileDesc, blockID_bucket, &bucket_block) < 0){
             BF_PrintError("Error reading block");
@@ -378,32 +385,67 @@ int HashStatistics(char *filename){
         }
 
         int n_buckets;
-        if (i == n_bucket_blocks && remainder > 0)
-            n_buckets = remainder;
+        if (i + 1 == n_bucket_blocks && remainder > 0)
+            n_buckets = remainder/sizeof(int);
         else
             n_buckets = (BLOCK_SIZE-sizeof(int))/sizeof(int);
-        /*Initialize buckets with empty pointers to blocks: -1*/
-        int count = 0, pointer, blockID;
+
+        int pointer, blockID;
         void *current_block = NULL;
-
-        for (int j = 0; j < n_buckets; j++) {
-
+        for (int j = 0; j < n_buckets; j++) { /*for every bucket in block of buckets*/
+            
+            bucket_index++;
+            overflow_blocks = 0;
+            int count = 0;
             pointer = j%n_bucket_blocks;
             blockID = *(int *)(bucket_block + pointer*sizeof(int));
 
-            while ( blockID != -1) { //while (current_block != NULL)
+            while ( blockID != -1) { /*for every block of records in bucket*/
 
+                total_blocks_bucket++;
+                overflow_blocks++;
                 if (BF_ReadBlock(info->fileDesc, blockID, &current_block) < 0){
                     BF_PrintError("Error reading block");
                     return -1;
                 }
 
-                count = *(int *)(current_block + REC_NUM);
+                count += *(int *)(current_block + REC_NUM);
 
                 blockID = *(int *)(current_block + NEXT);
+            }
+            if (count < min_recs){
+                min_recs = count;
+            }
+            if (count > max_recs){
+                max_recs = count;
+            }
+            total_recs += count;
+
+            if (overflow_blocks > 1){
+                overflow_buckets++;
+                printf("Bucket %d has %d overflow blocks.\n", bucket_index, overflow_blocks-1);
             }
         }
 
         blockID_bucket = *(int *)(bucket_block + NEXT_BUCKET);
     }
+    printf("Number of blocks in file %d.\n", nblocks);
+
+    float average_recs = (float)total_recs / (float)info->numBuckets; /*b*/
+    printf("Minimum number of records in bucket is %d.\n", min_recs);
+    printf("Maximum number of records in bucket is %d.\n", max_recs);
+    printf("Average number of records in bucket is %f.\n", average_recs);
+
+    float average_blocks_bucket = (float)total_blocks_bucket/ (float)info->numBuckets; /*c*/
+    printf("Average number of blocks in a bucket %f.\n", average_blocks_bucket);
+
+    printf("%d buckets have overflow blocks.\n", overflow_buckets);
+    
+    // if (HT_CloseIndex(filename) < 0) {
+    //     printf("Could not close file\n");
+    //     return -1;
+    // }
+    // else printf("File closed succesfully\n");
+
+    return 0;
 }

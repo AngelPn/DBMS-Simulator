@@ -44,9 +44,11 @@ int main(void){
     HT_GetAllEntries(*info, &key);
     HT_DeleteEntry(*info, &key);
 
+    HashStatistics("test");
+    
     if (HT_CloseIndex(info) < 0)
         printf("not\n");
     else printf("success\n");
+    
 
-    printf("%d\n", 150%127);
 }
