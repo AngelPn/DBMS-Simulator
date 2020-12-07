@@ -86,38 +86,37 @@ int HP_CloseFile(HP_info *header_info){
 
 int HP_InsertEntry(HP_info header_info, Record record){
 
-    int block_susID = -1;
+    int blockID = 0, prev_blockID = 0, block_susID = -1;
     int count = 0;
-    int blockID = 0;
-    int prev_blockID = 0;
-    void *current_block;
 
+    /*Get the block ID of first block of records*/
+    void *current_block = NULL;
     if (BF_ReadBlock(header_info.fileDesc, header_info.header_block_ID, &current_block) < 0){
         BF_PrintError("Error reading block");
         return -1;
     }
     blockID = *(int *)(current_block + NEXT);
 
-    while ( blockID != -1) { //while (current_block != NULL)
+    /*Scan the block of records: do not insert a record that already exists*/
+    while (blockID != -1) { 
+        /*Read the block with ID blockID and get the address*/
         if (BF_ReadBlock(header_info.fileDesc, blockID, &current_block) < 0){
             BF_PrintError("Error reading block");
             return -1;
         }
-
+        /*Get the number of records of current_block and store it to count variable*/
         count = *(int *)(current_block + REC_NUM);
 
+        /*For every record in current_block, compare keys*/
         for (int j = 0; j < count; j++){
-
             Record current_rec = (Record)(current_block + j*RECORD_SIZE);
-
             void *record_key = get_key(record, header_info.attrName);
             void *current_key = get_key(current_rec, header_info.attrName);
-            //printf("keys:%d-%d\t", *(int *)record_key, *(int *)current_key);
-            
             if (memcmp(record_key, current_key, header_info.attrLength) == 0){
                 return -1;
             }
         }
+        /*If there is empty space in block for record, store the ID of block in block_susID*/
         if (count < BLOCK_SIZE/RECORD_SIZE){
             block_susID = blockID;
         }
@@ -125,36 +124,37 @@ int HP_InsertEntry(HP_info header_info, Record record){
         blockID = *(int *)(current_block + NEXT);
     }
 
-    if (block_susID == -1){ /*if all previous blocks are full*/
+    if (block_susID == -1){ /*If all previous blocks are full*/
         if (BF_AllocateBlock(header_info.fileDesc) < 0){
             BF_PrintError("Error allocating block");
             return -1;
         }
-        void *block;
+        /*Get the ID of new allocated block and store it in blockID*/
         blockID = BF_GetBlockCounter(header_info.fileDesc)-1;
+        /*Read the block with ID blockID and get the address*/
+        void *block = NULL;
         if (BF_ReadBlock(header_info.fileDesc, blockID, &block) < 0){
             BF_PrintError("Error reading block");
             return -1;
         }
+        /*Read the previous block and get the address*/
         void *prev_block;
         if (BF_ReadBlock(header_info.fileDesc, prev_blockID, &prev_block) < 0){
             BF_PrintError("Error reading block");
             return -1;
         }
-
-        /*previous block points to this block*/
+        /*Make previous block point to new allocated block*/
         memcpy(prev_block + NEXT, &blockID, sizeof(int));
         if (BF_WriteBlock(header_info.fileDesc, prev_blockID) < 0)
             return -1;
-
+        /*Add the record in new allocated block, set number of records to 1 and pointer to next block -1*/
+        memcpy(block, record, RECORD_SIZE);
         count = 1;
         memcpy(block + REC_NUM, &count, sizeof(int));
-        memcpy(block, record, RECORD_SIZE);
-
         count = -1;
         memcpy(block + NEXT, &count, sizeof(int));
     }
-    else {
+    else { /*If an empty space found, add the record there*/
         void *block;
         if (BF_ReadBlock(header_info.fileDesc, block_susID, &block) < 0){
             BF_PrintError("Error reading block");
@@ -166,7 +166,7 @@ int HP_InsertEntry(HP_info header_info, Record record){
 
         blockID = block_susID;
     }
-
+    /*Return the ID of block that record has inserted*/
     if (BF_WriteBlock(header_info.fileDesc, blockID) < 0)
         return -1;
     return blockID;
