@@ -97,7 +97,7 @@ int HP_InsertEntry(HP_info header_info, Record record){
     }
     blockID = *(int *)(current_block + NEXT);
 
-    /*Scan the block of records: do not insert a record that already exists*/
+    /*Scan the blocks of records: do not insert a record that already exists*/
     while (blockID != -1) { 
         /*Read the block with ID blockID and get the address*/
         if (BF_ReadBlock(header_info.fileDesc, blockID, &current_block) < 0){
@@ -107,8 +107,7 @@ int HP_InsertEntry(HP_info header_info, Record record){
         /*Get the number of records of current_block and store it to count variable*/
         count = *(int *)(current_block + REC_NUM);
 
-        /*For every record in current_block, compare keys*/
-        for (int j = 0; j < count; j++){
+        for (int j = 0; j < count; j++){/*For every record in current_block, compare keys*/
             Record current_rec = (Record)(current_block + j*RECORD_SIZE);
             void *record_key = get_key(record, header_info.attrName);
             void *current_key = get_key(current_rec, header_info.attrName);
@@ -172,33 +171,41 @@ int HP_InsertEntry(HP_info header_info, Record record){
     return blockID;
 }
 
+
 int HP_DeleteEntry(HP_info header_info, void *value){
 
     int count = 0;
-    int blockID = 1;
-    void *current_block;
+    int blockID = 0;
 
-    while ( blockID != -1) { //while (current_block != NULL)
+    /*Get the block ID of first block of records*/
+    void *current_block = NULL;
+    if (BF_ReadBlock(header_info.fileDesc, header_info.header_block_ID, &current_block) < 0){
+        BF_PrintError("Error reading block");
+        return -1;
+    }
+    blockID = *(int *)(current_block + NEXT);
 
+    while (blockID != -1) { /*Scan the blocks of records*/
+        /*Read the block with ID blockID and get the address*/
         if (BF_ReadBlock(header_info.fileDesc, blockID, &current_block) < 0){
             BF_PrintError("Error reading block");
             return -1;
         }
-
+        /*Get the number of records of current_block and store it to count variable*/
         count = *(int *)(current_block + REC_NUM);
 
-        for (int j = 0; j < count; j++){
+        for (int j = 0; j < count; j++){ /*For every record in current_block, compare keys*/
 
             Record current_rec = (current_block + j*RECORD_SIZE);
             void *current_key = get_key(current_rec, header_info.attrName);
 
-            if (memcmp(value, current_key, header_info.attrLength) == 0){
-
+            if (memcmp(value, current_key, header_info.attrLength) == 0){/*Record to delete is found*/
+                /*Get the last record of current block and copy it to the record to delete*/
                 Record last_rec = (current_block + count*RECORD_SIZE);
-
+                memcpy(current_block + j*RECORD_SIZE, last_rec, RECORD_SIZE);
+                /*Decreament the number of records*/
                 count--;
                 memcpy(current_block + REC_NUM, &count, sizeof(int));
-                memcpy(current_block + j*RECORD_SIZE, last_rec, RECORD_SIZE);
 
                 if (BF_WriteBlock(header_info.fileDesc, blockID) < 0)
                     return -1;
@@ -214,24 +221,31 @@ int HP_DeleteEntry(HP_info header_info, void *value){
 int HP_GetAllEntries(HP_info header_info, void *value){
 
     int count = 0;
-    int blockID = 1;
-    void *current_block;
+    int blockID = 0;
 
-    while ( blockID != -1) { //while (current_block != NULL)
+    /*Get the block ID of first block of records*/
+    void *current_block = NULL;
+    if (BF_ReadBlock(header_info.fileDesc, header_info.header_block_ID, &current_block) < 0){
+        BF_PrintError("Error reading block");
+        return -1;
+    }
+    blockID = *(int *)(current_block + NEXT);
 
+    while (blockID != -1) {/*Scan the blocks of records*/
+        /*Read the block with ID blockID and get the address*/
         if (BF_ReadBlock(header_info.fileDesc, blockID, &current_block) < 0){
             BF_PrintError("Error reading block");
             return -1;
         }
-
+        /*Get the number of records of current_block and store it to count variable*/
         count = *(int *)(current_block + REC_NUM);
 
-        for (int j = 0; j < count; j++){
+        for (int j = 0; j < count; j++){ /*For every record in current_block, compare keys*/
 
             Record current_rec = current_block + j*RECORD_SIZE;
             void *current_key = get_key(current_rec, header_info.attrName);
 
-            if (memcmp(value, current_key, header_info.attrLength) == 0){
+            if (memcmp(value, current_key, header_info.attrLength) == 0){ /*Record to print is found*/
                 print_record(current_rec);
                 return blockID;
             }
