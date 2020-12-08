@@ -6,13 +6,21 @@
 #include "include/Record.h"
 
 int main(void){
+
     if (HP_CreateFile("test", 'i', "id", sizeof(int)) == 0)
         printf("Created file\n");
-    else printf("not\n");
+    else printf("Error! Could not create file\n");
 
     HP_info *info = HP_OpenFile("test");
-    if (info != NULL)
-        printf("%d %c %s %d\n", info->fileDesc, info->attrType, info->attrName, info->attrLength);
+    if (info != NULL){
+        printf("File opened with info:\n"
+                "\tfileDesc: %d\n"
+                "\tattrType: %c\n"
+                "\tattrName: %s\n"
+                "\tattrLength: %d\n",
+                info->fileDesc, info->attrType, info->attrName, info->attrLength);
+    }
+    else printf("Error! Could not open file\n");
 
     FILE *frecords;
     /*Open the file "records1K.txt" and read it*/
@@ -21,22 +29,20 @@ int main(void){
         printf("Error: fopen() failed\n");
         exit(EXIT_FAILURE);
     }
-    //fseek(frecords, 0, SEEK_SET);
     
+    /*Insert every record of file in heap*/
     int id;
     char name[15];
     char surname[25];
     char address[50];
     Record x;
-    int countiter;
+ 
     while(fscanf(frecords, "{%d,\"%[^\",\"]\",\"%[^\",\"]\",\"%[^\"]\"}\n", &id, name, surname, address) != EOF){
         x = create_record(id, name, surname, address);
-        if (HP_InsertEntry(*info ,x)==-1){
+        if (HP_InsertEntry(*info, x)==-1){
             printf("Record with id: %d could not entry\n", id);
         }
         free_record(x);
-        if (countiter > 100) break;
-        countiter++;
     }
 
     fclose(frecords);
@@ -45,9 +51,9 @@ int main(void){
     HP_GetAllEntries(*info, &key);
     HP_DeleteEntry(*info, &key);
 
-    if (HP_CloseFile(info) < 0)
-        printf("not\n");
-    else printf("success\n");
+    if (HP_CloseFile(info) == 0)
+        printf("Closed file\n");
+    else printf("Error! Could not close file\n");
 
     return 0;
 }

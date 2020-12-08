@@ -19,7 +19,7 @@ int HT_CreateIndex(char *fileName, char attrType, char* attrName,int attrLength,
 	}
     /*Open the created file in block - level and get the file identifier*/
     int fileDesc;
-    if (fileDesc = BF_OpenFile(fileName) < 0){
+    if ((fileDesc = BF_OpenFile(fileName)) < 0){
         BF_PrintError("Error opening file");
         return -1;
     }
@@ -99,7 +99,7 @@ int HT_CreateIndex(char *fileName, char attrType, char* attrName,int attrLength,
 HT_info *HT_OpenIndex(char *fileName){
     /*Get the file identifier with BF_OpenFile*/
     int fileDesc = 0;
-    if (fileDesc = BF_OpenFile(fileName) < 0){
+    if ((fileDesc = BF_OpenFile(fileName)) < 0){
         BF_PrintError("Error opening file");
 		exit(EXIT_FAILURE);
     }
@@ -113,7 +113,7 @@ HT_info *HT_OpenIndex(char *fileName){
     HT_info *info = (HT_info *)malloc(sizeof(HT_info));
 
     HT_info *header_info = (HT_info *)header_block;
-    memcpy(info, header_block, sizeof(HT_info));
+    memcpy(info, header_info, sizeof(HT_info));
 
     return info;
 }

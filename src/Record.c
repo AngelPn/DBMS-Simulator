@@ -30,6 +30,7 @@ void *get_key(Record rec, char *attrName){
         return rec->surname;
     else if(strcmp("address", attrName) == 0)
         return rec->address;
+    else return NULL;
 }
 
 void print_record(Record rec){

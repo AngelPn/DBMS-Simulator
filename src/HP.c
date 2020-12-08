@@ -17,7 +17,7 @@ int HP_CreateFile(char *fileName, char attrType, char *attrName, int attrLength)
 	}
     /*Open the created file in block - level and get the file identifier*/
     int fileDesc;
-    if (fileDesc = BF_OpenFile(fileName) < 0){
+    if ((fileDesc = BF_OpenFile(fileName)) < 0){
         BF_PrintError("Error opening file");
         return -1;
     }
@@ -54,7 +54,7 @@ int HP_CreateFile(char *fileName, char attrType, char *attrName, int attrLength)
 HP_info *HP_OpenFile(char *fileName){
     /*Get the file identifier with BF_OpenFile*/
     int fileDesk = 0;
-    if (fileDesk = BF_OpenFile(fileName) < 0){
+    if ((fileDesk = BF_OpenFile(fileName)) < 0){
         BF_PrintError("Error opening file");
 		return NULL;
     }
