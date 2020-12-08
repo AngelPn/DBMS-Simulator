@@ -245,47 +245,48 @@ int HT_InsertEntry(HT_info header_info, Record record){
     return blockID;
 }
 
+
 int HT_DeleteEntry(HT_info header_info, void *value){
-    printf("DELETE\n");
+
     int index = hash(header_info.numBuckets, value);
-    printf("index = %d\t", index);
 
-    int nbuckets_in_block = BLOCK_SIZE/sizeof(int) - 1; //127
-    /*block ID that keeps the bucket index*/
-    int blockID_bucket = index/nbuckets_in_block + 1; //+1 because of header block
-    printf("blockID_bucket = %d\t", blockID_bucket);
+    /*Calculate the number of buckets in block (-1 because of pointer to next block of buckets)*/
+    int nbuckets_in_block = BLOCK_SIZE/sizeof(int) - 1;
 
+    /*block ID of block of buckets that keeps the bucket index (+1 because of header block)*/
+    int blockID_bucket = index/nbuckets_in_block + 1;
+
+    /*Read the block of buckets with bucket index and store the address to bucket_block variable*/
     void *bucket_block = NULL;
     if (BF_ReadBlock(header_info.fileDesc, blockID_bucket, &bucket_block) < 0){
         BF_PrintError("Error reading block");
         return -1;
     }
-    int pointer = index%nbuckets_in_block;
-    //int blockID = *(int *)(bucket_block + sizeof(int)*abs((index-1) - nbuckets_in_block*(blockID_bucket-1)) -1);
-    int blockID = *(int *)(bucket_block + pointer*sizeof(int));
-    printf("blockID = %d\n", blockID);
+    /*Get the ID of block of records of bucket index and store it to blockID*/
+    int blockID = *(int *)(bucket_block + (index%nbuckets_in_block)*sizeof(int));
 
     int count = 0;
-    void *current_block;
+    void *current_block = NULL;
 
-    while ( blockID != -1) { //while (current_block != NULL)
+    while (blockID != -1) { /*Scan the blocks of records*/
 
+        /*Read the block with ID blockID and get the address*/
         if (BF_ReadBlock(header_info.fileDesc, blockID, &current_block) < 0){
             BF_PrintError("Error reading block");
             return -1;
         }
-
+        /*Get the number of records of current_block and store it to count variable*/
         count = *(int *)(current_block + REC_NUM);
 
-        for (int j = 0; j < count; j++){
+        for (int j = 0; j < count; j++){ /*For every record in current_block, compare keys*/
 
             Record current_rec = (current_block + j*RECORD_SIZE);
             void *current_key = get_key(current_rec, header_info.attrName);
 
-            if (memcmp(value, current_key, header_info.attrLength) == 0){
-
+            if (memcmp(value, current_key, header_info.attrLength) == 0){ /*Record to delete is found*/
+                /*Get the last record of current block and copy it to the record to delete*/
                 Record last_rec = (current_block + count*RECORD_SIZE);
-
+                /*Decreament the number of records*/
                 count--;
                 memcpy(current_block + REC_NUM, &count, sizeof(int));
                 memcpy(current_block + j*RECORD_SIZE, last_rec, RECORD_SIZE);
@@ -301,43 +302,43 @@ int HT_DeleteEntry(HT_info header_info, void *value){
 }
 
 int HT_GetAllEntries(HT_info header_info, void *value){
-    printf("GET ENTRY\n");
+
     int index = hash(header_info.numBuckets, value);
-    printf("index = %d\t", index);
+    
+    /*Calculate the number of buckets in block (-1 because of pointer to next block of buckets)*/
+    int nbuckets_in_block = BLOCK_SIZE/sizeof(int) - 1;
 
-    int nbuckets_in_block = BLOCK_SIZE/sizeof(int) - 1; //127
-    /*block ID that keeps the bucket index*/
-    int blockID_bucket = index/nbuckets_in_block + 1; //+1 because of header block
-    printf("blockID_bucket = %d\t", blockID_bucket);
+    /*block ID of block of buckets that keeps the bucket index (+1 because of header block)*/
+    int blockID_bucket = index/nbuckets_in_block + 1;
 
+    /*Read the block of buckets with bucket index and store the address to bucket_block variable*/
     void *bucket_block = NULL;
     if (BF_ReadBlock(header_info.fileDesc, blockID_bucket, &bucket_block) < 0){
         BF_PrintError("Error reading block");
         return -1;
     }
-    int pointer = index%nbuckets_in_block;
-    //int blockID = *(int *)(bucket_block + sizeof(int)*abs((index-1) - nbuckets_in_block*(blockID_bucket-1)) -1);
-    int blockID = *(int *)(bucket_block + pointer*sizeof(int));
-    printf("blockID = %d\n", blockID);
+    /*Get the ID of block of records of bucket index and store it to blockID*/
+    int blockID = *(int *)(bucket_block + (index%nbuckets_in_block)*sizeof(int));
 
     int count = 0;
-    void *current_block;
+    void *current_block = NULL;
 
-    while ( blockID != -1) { //while (current_block != NULL)
+    while (blockID != -1) { /*Scan the blocks of records*/
 
+        /*Read the block with ID blockID and get the address*/
         if (BF_ReadBlock(header_info.fileDesc, blockID, &current_block) < 0){
             BF_PrintError("Error reading block");
             return -1;
         }
-
+        /*Get the number of records of current_block and store it to count variable*/
         count = *(int *)(current_block + REC_NUM);
 
-        for (int j = 0; j < count; j++){
+        for (int j = 0; j < count; j++){ /*For every record in current_block, compare keys*/
 
             Record current_rec = current_block + j*RECORD_SIZE;
             void *current_key = get_key(current_rec, header_info.attrName);
 
-            if (memcmp(value, current_key, header_info.attrLength) == 0){
+            if (memcmp(value, current_key, header_info.attrLength) == 0){ /*Record to print is found*/
                 print_record(current_rec);
                 return blockID;
             }
@@ -349,13 +350,14 @@ int HT_GetAllEntries(HT_info header_info, void *value){
 
 
 int HashStatistics(char *filename){
+
     HT_info *info  = HT_OpenIndex(filename);
+
      /*How many blocks has the file*/
     int nblocks = BF_GetBlockCounter(info->fileDesc);
 
     int min_recs = 1000, max_recs = -1;
-    int total_recs = 0;
-    int total_blocks_bucket = 0;
+    int total_recs = 0, total_blocks_bucket = 0;
     int overflow_buckets = 0, overflow_blocks;
 
     /*File parsing*/
@@ -375,7 +377,7 @@ int HashStatistics(char *filename){
         n_bucket_blocks++;
 
     int bucket_index = 0;
-    for (int i = 0; i < n_bucket_blocks; i++){ /*for every block of buckets*/
+    for (int i = 1; i <= n_bucket_blocks; i++){ /*For every block of buckets*/
         
         if (BF_ReadBlock(info->fileDesc, blockID_bucket, &bucket_block) < 0){
             BF_PrintError("Error reading block");
@@ -383,22 +385,21 @@ int HashStatistics(char *filename){
         }
 
         int n_buckets;
-        if (i + 1 == n_bucket_blocks && remainder > 0)
+        if (i == n_bucket_blocks && remainder > 0)
             n_buckets = remainder/sizeof(int);
         else
             n_buckets = (BLOCK_SIZE-sizeof(int))/sizeof(int);
 
         int pointer, blockID;
         void *current_block = NULL;
-        for (int j = 0; j < n_buckets; j++) { /*for every bucket in block of buckets*/
+        for (int j = 0; j < n_buckets; j++) { /*For every bucket in block of buckets*/
             
             bucket_index++;
             overflow_blocks = 0;
             int count = 0;
-            pointer = j%n_bucket_blocks;
-            blockID = *(int *)(bucket_block + pointer*sizeof(int));
+            blockID = *(int *)(bucket_block + (j%n_bucket_blocks)*sizeof(int));
 
-            while ( blockID != -1) { /*for every block of records in bucket*/
+            while (blockID != -1) { /*for every block of records in bucket*/
 
                 total_blocks_bucket++;
                 overflow_blocks++;
@@ -406,17 +407,14 @@ int HashStatistics(char *filename){
                     BF_PrintError("Error reading block");
                     return -1;
                 }
-
                 count += *(int *)(current_block + REC_NUM);
 
                 blockID = *(int *)(current_block + NEXT);
             }
-            if (count < min_recs){
+            if (count < min_recs)
                 min_recs = count;
-            }
-            if (count > max_recs){
+            if (count > max_recs)
                 max_recs = count;
-            }
             total_recs += count;
 
             if (overflow_blocks > 1){
@@ -424,7 +422,6 @@ int HashStatistics(char *filename){
                 printf("Bucket %d has %d overflow blocks.\n", bucket_index, overflow_blocks-1);
             }
         }
-
         blockID_bucket = *(int *)(bucket_block + NEXT_BUCKET);
     }
     printf("Number of blocks in file %d.\n", nblocks);
