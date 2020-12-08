@@ -97,8 +97,8 @@ int HP_InsertEntry(HP_info header_info, Record record){
     }
     blockID = *(int *)(current_block + NEXT);
 
-    /*Scan the blocks of records: do not insert a record that already exists*/
-    while (blockID != -1) { 
+    while (blockID != -1) {  /*Scan the blocks of records: do not insert a record that already exists*/
+
         /*Read the block with ID blockID and get the address*/
         if (BF_ReadBlock(header_info.fileDesc, blockID, &current_block) < 0){
             BF_PrintError("Error reading block");
@@ -107,7 +107,7 @@ int HP_InsertEntry(HP_info header_info, Record record){
         /*Get the number of records of current_block and store it to count variable*/
         count = *(int *)(current_block + REC_NUM);
 
-        for (int j = 0; j < count; j++){/*For every record in current_block, compare keys*/
+        for (int j = 0; j < count; j++){ /*For every record in current_block, compare keys*/
             Record current_rec = (Record)(current_block + j*RECORD_SIZE);
             void *record_key = get_key(record, header_info.attrName);
             void *current_key = get_key(current_rec, header_info.attrName);
