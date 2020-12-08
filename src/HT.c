@@ -390,7 +390,7 @@ int HashStatistics(char *filename){
         else
             n_buckets = (BLOCK_SIZE-sizeof(int))/sizeof(int);
 
-        int pointer, blockID;
+        int blockID;
         void *current_block = NULL;
         for (int j = 0; j < n_buckets; j++) { /*For every bucket in block of buckets*/
             
