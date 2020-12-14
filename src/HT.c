@@ -61,13 +61,13 @@ int HT_CreateIndex(char *fileName, char attrType, char* attrName,int attrLength,
         /*Allocate a block of buckets*/
         if (BF_AllocateBlock(fileDesc) < 0){
             BF_PrintError("Error allocating block");
-            exit(EXIT_FAILURE);
+		    return -1;
         }
         /*Read the block of buckets and take the address*/
         bucket_blockID = BF_GetBlockCounter(fileDesc)-1;
         if (BF_ReadBlock(fileDesc, bucket_blockID, &curr_block) < 0){
             BF_PrintError("Error reading block");
-            exit(EXIT_FAILURE);
+		    return -1;
         }
         /*Point the previous block to the new block*/
         memcpy(prev_block + NEXT_BUCKET, &bucket_blockID, sizeof(int));
@@ -99,13 +99,13 @@ HT_info *HT_OpenIndex(char *fileName){
     int fileDesc = 0;
     if ((fileDesc = BF_OpenFile(fileName)) < 0){
         BF_PrintError("Error opening file");
-		exit(EXIT_FAILURE);
+		return NULL;
     }
     /*Read the header_block*/
     void *header_block = NULL;
     if (BF_ReadBlock(fileDesc, 0, &header_block) < 0){
         BF_PrintError("Error reading block");
-        exit(EXIT_FAILURE);
+		return NULL;
     }
     /*Allocate HT_info struct*/
     HT_info *info = (HT_info *)malloc(sizeof(HT_info));
@@ -391,13 +391,18 @@ int HT_GetAllEntries(HT_info header_info, void *value){
 
             Record current_rec = current_block + j*RECORD_SIZE;
             void *current_key = get_key(current_rec, header_info.attrName);
-
-            if (memcmp(value, current_key, header_info.attrLength) == 0){ /*Record to print is found*/
+            if (value == NULL){  /*if value is null print every entry*/
+                print_record(current_rec);
+            } 
+            else if (memcmp(value, current_key, header_info.attrLength) == 0){ /*Record to print is found*/
                 print_record(current_rec);
                 return blockID;
             }
         }
         blockID = *(int *)(current_block + NEXT);
+    }
+    if (value == NULL) {
+        return -2;
     }
     return -1;
 }

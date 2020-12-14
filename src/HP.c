@@ -247,12 +247,18 @@ int HP_GetAllEntries(HP_info header_info, void *value){
             Record current_rec = current_block + j*RECORD_SIZE;
             void *current_key = get_key(current_rec, header_info.attrName);
 
-            if (memcmp(value, current_key, header_info.attrLength) == 0){ /*Record to print is found*/
+            if (value == NULL){  /*if value is null print every entry*/
+                print_record(current_rec);
+            } 
+            else if (memcmp(value, current_key, header_info.attrLength) == 0){ /*Record to print is found*/
                 print_record(current_rec);
                 return blockID;
             }
         }
         blockID = *(int *)(current_block + NEXT);
+    }
+    if (value == NULL) {
+        return -2;
     }
     return -1;
 }
