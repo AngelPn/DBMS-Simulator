@@ -146,25 +146,42 @@ int HT_InsertEntry(HT_info header_info, Record record){
     void *key = get_key(record, header_info.attrName);
     int index = hash(header_info.numBuckets, key);
 
-    /*Calculate the number of buckets in block (-1 because of pointer to next block of buckets)*/
-    int nbuckets_in_block = BLOCK_SIZE/sizeof(int) - 1;
-
-    /*block ID of block of buckets that keeps the bucket index (+1 because of header block)*/
-    int blockID_bucket = index/nbuckets_in_block + 1;
-
-    /*Read the block of buckets with bucket index and store the address to bucket_block variable*/
-    void *bucket_block = NULL;
-    if (BF_ReadBlock(header_info.fileDesc, blockID_bucket, &bucket_block) < 0){
+    /*File parsing*/
+    void *header_block = NULL;
+    if (BF_ReadBlock(header_info.fileDesc, header_info.header_block_ID, &header_block) < 0){
         BF_PrintError("Error reading block");
         return -1;
+    }
+
+    int blockID_bucket = *(int *)(header_block + NEXT_BUCKET);
+    void *bucket_block  = NULL;
+    int n_buckets = (BLOCK_SIZE-sizeof(int))/sizeof(int);
+    int bucket_index = -1;
+    int i;
+
+    while (blockID_bucket != -1){ /*For every block of buckets*/
+
+        /*Read the block of buckets with blockID_bucket and get the address*/
+        if (BF_ReadBlock(header_info.fileDesc, blockID_bucket, &bucket_block) < 0){
+            BF_PrintError("Error reading block");
+            return -1;
+        }
+        
+        for (i = 0; i < n_buckets ; i++){ /*For every bucket in block of buckets*/
+            bucket_index++;
+            if (index == bucket_index) break;
+        }
+        if (index == bucket_index){
+            index = i*sizeof(int);
+            break;
+        }
+        blockID_bucket = *(int *)(bucket_block + NEXT_BUCKET);
     }
 
     int count = 0;
     int block_susID = -1, prev_blockID = blockID_bucket;
 
-    /*Get the ID of block of records of bucket index and store it to blockID*/
-    index = (index%nbuckets_in_block)*sizeof(int);
-    int blockID = *(int *)(bucket_block + index);
+    int blockID = *(int *)(bucket_block + index); /*ID of block of records*/
 
     void *current_block = NULL;
 
