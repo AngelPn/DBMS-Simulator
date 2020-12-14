@@ -3,6 +3,7 @@ IDIR = include
 SRC = src
 LDIR = lib
 ODIR = bin
+BDIR = build
 
 #compiler
 CC = gcc
@@ -17,10 +18,10 @@ DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
 LIBS = $(LDIR)/BF_64.a
 
-_HPOBJS = main_HP.o $(SRC)/HP.o $(SRC)/Record.o
+_HPOBJS = $(SRC)/main_HP.o $(SRC)/HP.o $(SRC)/Record.o
 HPOBJS = $(patsubst %,$(ODIR)/%,$(_HPOBJS))
 
-_HTOBJS = main_HT.o $(SRC)/HT.o $(SRC)/Record.o
+_HTOBJS = $(SRC)/main_HT.o $(SRC)/HT.o $(SRC)/Record.o
 HTOBJS = $(patsubst %,$(ODIR)/%,$(_HTOBJS))
 
 $(ODIR)/%.o: %.c $(DEPS)
@@ -32,10 +33,10 @@ $(ODIR)/%.o: %.c $(DEPS)
 all: $(TARGETS)
 
 main_HP: $(HPOBJS)
-	$(CC) -o $@ $^ -no-pie $(LIBS)
+	$(CC) -o $(BDIR)/$@ $^ -no-pie $(LIBS)
 
 main_HT: $(HTOBJS)
-	$(CC) -o $@ $^ -no-pie $(LIBS)
+	$(CC) -o $(BDIR)/$@ $^ -no-pie $(LIBS)
 
 clean: clean_HP clean_HT
 

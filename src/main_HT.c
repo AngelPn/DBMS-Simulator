@@ -2,29 +2,30 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "include/HP.h"
-#include "include/Record.h"
+#include "../include/HT.h"
+#include "../include/Record.h"
 
 int main(void){
 
-    if (HP_CreateFile("test", 'i', "id", sizeof(int)) == 0)
+    if (HT_CreateIndex("test", 'i', "id", sizeof(int), 150) == 0)
         printf("Created file\n");
     else printf("Error! Could not create file\n");
 
-    HP_info *info = HP_OpenFile("test");
+    HT_info *info = HT_OpenIndex("test");
     if (info != NULL){
         printf("File opened with info:\n"
                 "\tfileDesc: %d\n"
                 "\tattrType: %c\n"
                 "\tattrName: %s\n"
-                "\tattrLength: %d\n",
-                info->fileDesc, info->attrType, info->attrName, info->attrLength);
+                "\tattrLength: %d\n"
+                "\tnumBuckets: %ld\n",
+                info->fileDesc, info->attrType, info->attrName, info->attrLength, info->numBuckets);
     }
     else printf("Error! Could not open file\n");
 
     FILE *frecords;
     /*Open the file "records1K.txt" and read it*/
-    frecords = fopen("./examples/records1K.txt","r");
+    frecords = fopen("../examples/records1K.txt","r");
     if (frecords == NULL){
         printf("Error: fopen() failed\n");
         exit(EXIT_FAILURE);
@@ -36,10 +37,10 @@ int main(void){
     char surname[25];
     char address[50];
     Record x;
- 
+
     while(fscanf(frecords, "{%d,\"%[^\",\"]\",\"%[^\",\"]\",\"%[^\"]\"}\n", &id, name, surname, address) != EOF){
         x = create_record(id, name, surname, address);
-        if (HP_InsertEntry(*info, x)==-1){
+        if (HT_InsertEntry(*info, x)==-1){
             printf("Record with id: %d could not entry\n", id);
         }
         free_record(x);
@@ -48,12 +49,14 @@ int main(void){
     fclose(frecords);
 
     int key = 54;
-    HP_GetAllEntries(*info, &key);
-    HP_DeleteEntry(*info, &key);
+    HT_GetAllEntries(*info, &key);
+    HT_DeleteEntry(*info, &key);
 
-    if (HP_CloseFile(info) == 0)
+    HashStatistics("test");
+    
+    if (HT_CloseIndex(info) == 0)
         printf("Closed file\n");
     else printf("Error! Could not close file\n");
-
+    
     return 0;
 }
