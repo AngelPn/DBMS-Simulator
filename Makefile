@@ -41,8 +41,8 @@ main_HT: $(HTOBJS)
 clean: clean_HP clean_HT
 
 clean_HP:
-	rm -f $(ODIR)/*.o $(ODIR)/$(SRC)/*.o main_HP test
+	rm -f $(ODIR)/*.o $(ODIR)/$(SRC)/*.o $(BDIR)/*
 	#find . -type f -not -name '*c' -not -name '*h' -not -name '*a' -not -name 'Makefile' -delete
 
 clean_HT:
-	rm -f $(ODIR)/*.o $(ODIR)/$(SRC)/*.o main_HT test
+	rm -f $(ODIR)/*.o $(ODIR)/$(SRC)/*.o $(BDIR)/*
