@@ -23,7 +23,10 @@ HPOBJS = $(patsubst %,$(ODIR)/%,$(_HPOBJS))
 _HTOBJS = main_HT.o HT.o Record.o
 HTOBJS = $(patsubst %,$(ODIR)/%,$(_HTOBJS))
 
+#dir_guard=$(shell [ ! -d $(@D) ] && mkdir -p $(@D)) #if dir exists dont make a new one
+
 $(ODIR)/%.o: %.c $(DEPS)
+	@mkdir -p $(ODIR)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 # $(TARGETS): %: %.c HT.c HP.c Record.c
@@ -32,11 +35,14 @@ $(ODIR)/%.o: %.c $(DEPS)
 all: $(TARGETS)
 
 main_HP: $(HPOBJS)
+	@mkdir -p $(BDIR)
 	$(CC) -o $(BDIR)/$@ $^ -no-pie $(LIBS)
 
 main_HT: $(HTOBJS)
+	@mkdir -p $(BDIR)
 	$(CC) -o $(BDIR)/$@ $^ -no-pie $(LIBS)
 
 clean: 
 	rm -f $(ODIR)/*.o $(BDIR)/*
+	rmdir $(ODIR) $(BDIR)
 
