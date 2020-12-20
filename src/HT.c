@@ -130,14 +130,7 @@ int HT_CloseIndex(HT_info *header_info){
 
 int hash(long int nbuckets, void *key){
     int k = *(int *)key;
-    int index;
-    
-    index = k%nbuckets;
-
-    // double c = (sqrt(5) - 1)/2;
-    // index = floor(nbuckets*(k*(int)c%1));
-
-    return index;
+    return k%nbuckets;
 }
 
 
@@ -415,7 +408,7 @@ int HashStatistics(char *filename){
      /*How many blocks has the file*/
     int nblocks = BF_GetBlockCounter(info->fileDesc);
 
-    int min_recs = 1000, max_recs = -1;
+    int min_recs = 0, max_recs = -1;
     int total_recs = 0, total_blocks_bucket = 0;
     int overflow_buckets = 0, overflow_blocks;
 
@@ -470,6 +463,8 @@ int HashStatistics(char *filename){
 
                 blockID = *(int *)(current_block + NEXT);
             }
+            if (i == 1 && j == 0) /*Initialize min_recs*/
+                min_recs = count;
             if (count < min_recs)
                 min_recs = count;
             if (count > max_recs)
@@ -495,11 +490,7 @@ int HashStatistics(char *filename){
 
     printf("%d buckets have overflow blocks.\n", overflow_buckets);
     
-    // if (HT_CloseIndex(filename) < 0) {
-    //     printf("Could not close file\n");
-    //     return -1;
-    // }
-    // else printf("File closed succesfully\n");
+    free(info);
 
     return 0;
 }
