@@ -223,6 +223,7 @@ int HP_GetAllEntries(HP_info header_info, void *value){
 
     int count = 0;
     int blockID = 0;
+    int block_counter = 0;
 
     /*Get the block ID of first block of records*/
     void *current_block = NULL;
@@ -233,7 +234,7 @@ int HP_GetAllEntries(HP_info header_info, void *value){
     blockID = *(int *)(current_block + NEXT);
 
     while (blockID != -1) { /*Scan the blocks of records*/
-    
+        block_counter++;
         /*Read the block with ID blockID and get the address*/
         if (BF_ReadBlock(header_info.fileDesc, blockID, &current_block) < 0){
             BF_PrintError("Error reading block");
@@ -252,13 +253,13 @@ int HP_GetAllEntries(HP_info header_info, void *value){
             } 
             else if (memcmp(value, current_key, header_info.attrLength) == 0){ /*Record to print is found*/
                 print_record(current_rec);
-                return blockID;
+                return block_counter;
             }
         }
         blockID = *(int *)(current_block + NEXT);
     }
     if (value == NULL) {
-        return -2;
+        return block_counter;
     }
     return -1;
 }
