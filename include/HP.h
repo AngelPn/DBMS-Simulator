@@ -5,6 +5,7 @@
 
 typedef struct HP_info
 {
+    int fileType; //type of the file: 0->heap, 1->hash
     int fileDesc;
     char attrType; //type of key
     char *attrName; //name of key

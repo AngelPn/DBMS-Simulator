@@ -33,7 +33,8 @@ int HP_CreateFile(char *fileName, char attrType, char *attrName, int attrLength)
         return -1;
     }
     /*Create the HP_info struct and save it to header_block*/
-    HP_info info = {.fileDesc = fileDesc,
+    HP_info info = {.fileType = 0,
+                    .fileDesc = fileDesc,
                     .attrType = attrType, 
                     .attrName = malloc(sizeof(char)*(strlen(attrName)+1)),
                     .attrLength = attrLength,
@@ -68,6 +69,9 @@ HP_info *HP_OpenFile(char *fileName){
     HP_info *info = (HP_info *)malloc(sizeof(HP_info));
     
     HP_info *header_info = (HP_info *)header_block;
+    /*Check if the file type is heap*/
+    if (header_info->fileType != 0)
+        return NULL;
     memcpy(info, header_info, sizeof(HP_info));
 
     return info;
@@ -109,8 +113,8 @@ int HP_InsertEntry(HP_info header_info, Record record){
 
         for (int j = 0; j < count; j++){ /*For every record in current_block, compare keys*/
             Record *current_rec = (Record *)(current_block + j*RECORD_SIZE);
-            void *record_key = get_key(record, header_info.attrName);
-            void *current_key = get_key(*current_rec, header_info.attrName);
+            void *record_key = get_key(&record, header_info.attrName);
+            void *current_key = get_key(current_rec, header_info.attrName);
             if (memcmp(record_key, current_key, header_info.attrLength) == 0){
                 return -1;
             }
@@ -198,23 +202,30 @@ int HP_DeleteEntry(HP_info header_info, void *value){
         for (int j = 0; j < count; j++){ /*For every record in current_block, compare keys*/
 
             Record *current_rec = (current_block + j*RECORD_SIZE);
-            void *current_key = get_key(*current_rec, header_info.attrName);
+            void *current_key = get_key(current_rec, header_info.attrName);
 
             if (memcmp(value, current_key, header_info.attrLength) == 0){ /*Record to delete is found*/
                 /*Get the last record of current block and copy it to the record to delete*/
-                Record *last_rec = (current_block + count*RECORD_SIZE);
+                Record *last_rec = (current_block + (count-1)*RECORD_SIZE);
+                print_record(*last_rec);
                 memcpy(current_block + j*RECORD_SIZE, last_rec, RECORD_SIZE);
+                Record x;
+                init_record(&x, -1, "0", "0", "0");
+                memcpy(current_block +(count-1)*RECORD_SIZE, &x, RECORD_SIZE);
                 /*Decreament the number of records*/
                 count--;
                 memcpy(current_block + REC_NUM, &count, sizeof(int));
 
-                if (BF_WriteBlock(header_info.fileDesc, blockID) < 0)
+                if (BF_WriteBlock(header_info.fileDesc, blockID) < 0){
+                    printf("inside\n");
                     return -1;
+                }
                 else return 0;
             }
             blockID = *(int *)(current_block + NEXT);
         }
     }
+    printf("at the end\n");
     return -1;
 }
 
@@ -246,7 +257,7 @@ int HP_GetAllEntries(HP_info header_info, void *value){
         for (int j = 0; j < count; j++){ /*For every record in current_block, compare keys*/
 
             Record *current_rec = current_block + j*RECORD_SIZE;
-            void *current_key = get_key(*current_rec, header_info.attrName);
+            void *current_key = get_key(current_rec, header_info.attrName);
 
             if (value == NULL){  /*if value is null print every entry*/
                 print_record(*current_rec);

@@ -11,15 +11,15 @@ void init_record(Record *rec, int id, char *name, char *surname, char *address){
     strcpy(rec->address, address);
 }
 
-void *get_key(Record rec, char *attrName){
+void *get_key(Record *rec, char *attrName){
     if (strcmp("id", attrName) == 0)
-        return &(rec.id);
+        return &(rec->id);
     else if(strcmp("name", attrName) == 0)
-        return rec.name;
+        return rec->name;
     else if(strcmp("surname", attrName) == 0)
-        return rec.surname;
+        return rec->surname;
     else if(strcmp("address", attrName) == 0)
-        return rec.address;
+        return rec->address;
     else return NULL;
 }
 

@@ -34,7 +34,8 @@ int HT_CreateIndex(char *fileName, char attrType, char* attrName,int attrLength,
         BF_PrintError("Error reading block");
         return -1;
     }
-    HT_info info = {.fileDesc = fileDesc,
+    HT_info info = {.fileType = 1,
+                    .fileDesc = fileDesc,
                     .attrType = attrType, 
                     .attrName = malloc(sizeof(char)*(strlen(attrName)+1)),
                     .attrLength = attrLength,
@@ -111,6 +112,9 @@ HT_info *HT_OpenIndex(char *fileName){
     HT_info *info = (HT_info *)malloc(sizeof(HT_info));
 
     HT_info *header_info = (HT_info *)header_block;
+    /*Check if the file type is hash*/
+    if (header_info->fileType != 1)
+        return NULL;
     memcpy(info, header_info, sizeof(HT_info));
 
     return info;
@@ -136,7 +140,7 @@ int hash(long int nbuckets, void *key){
 
 int HT_InsertEntry(HT_info header_info, Record record){
 
-    void *key = get_key(record, header_info.attrName);
+    void *key = get_key(&record, header_info.attrName);
     int index = hash(header_info.numBuckets, key);
 
     /*File parsing*/
@@ -190,8 +194,8 @@ int HT_InsertEntry(HT_info header_info, Record record){
 
         for (int j = 0; j < count; j++){ /*For every record in current_block, compare keys*/
             Record *current_rec = (Record *)(current_block + j*RECORD_SIZE);
-            void *record_key = get_key(record, header_info.attrName);
-            void *current_key = get_key(*current_rec, header_info.attrName);
+            void *record_key = get_key(&record, header_info.attrName);
+            void *current_key = get_key(current_rec, header_info.attrName);
             if (memcmp(record_key, current_key, header_info.attrLength) == 0){
                 return -1;
             }
@@ -309,7 +313,7 @@ int HT_DeleteEntry(HT_info header_info, void *value){
         for (int j = 0; j < count; j++){ /*For every record in current_block, compare keys*/
 
             Record *current_rec = (current_block + j*RECORD_SIZE);
-            void *current_key = get_key(*current_rec, header_info.attrName);
+            void *current_key = get_key(current_rec, header_info.attrName);
 
             if (memcmp(value, current_key, header_info.attrLength) == 0){ /*Record to delete is found*/
                 /*Get the last record of current block and copy it to the record to delete*/
@@ -385,7 +389,7 @@ int HT_GetAllEntries(HT_info header_info, void *value){
         for (int j = 0; j < count; j++){ /*For every record in current_block, compare keys*/
 
             Record *current_rec = current_block + j*RECORD_SIZE;
-            void *current_key = get_key(*current_rec, header_info.attrName);
+            void *current_key = get_key(current_rec, header_info.attrName);
             if (value == NULL){  /*if value is null print every entry*/
                 print_record(*current_rec);
             } 

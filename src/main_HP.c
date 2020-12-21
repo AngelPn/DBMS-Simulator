@@ -48,8 +48,26 @@ int main(void){
     fclose(frecords);
 
     int key = 54;
-    HP_GetAllEntries(*info, &key);
-    HP_DeleteEntry(*info, &key);
+    printf("\nGet entry with ID = %d\n", key);
+    if (HP_GetAllEntries(*info, &key) == -1)
+        printf("Could not found entry\n");
+
+    key = 107;
+    printf("\nGet entry with ID = %d\n", key);
+    if (HP_GetAllEntries(*info, &key) == -1)
+        printf("Could not found entry\n");
+
+    key = 4;
+    printf("\nGet entry with ID = %d\n", key);
+    if (HP_GetAllEntries(*info, &key) == -1)
+        printf("Could not found entry\n");    
+
+    printf("\nDelete entry with ID = %d\n", key);
+    if (HP_DeleteEntry(*info, &key) == -1)
+        printf("Error! Could not delete entry\n");
+    printf("\nGet entry with ID = %d\n", key);
+    if (HP_GetAllEntries(*info, &key) == -1)
+        printf("Could not found entry\n");    
 
     if (HP_CloseFile(info) == 0)
         printf("Closed file\n");

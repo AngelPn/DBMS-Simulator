@@ -15,7 +15,7 @@ typedef struct record
 void init_record(Record *rec, int id, char *name, char *surname, char *address);
 
 /*Finds the key of record determined by attrName and returns a pointer to it*/
-void *get_key(Record rec, char *attrName);
+void *get_key(Record *rec, char *attrName);
 
 /*Prints the fields of record*/
 void print_record(Record rec);
