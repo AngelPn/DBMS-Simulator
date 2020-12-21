@@ -327,8 +327,8 @@ int HT_DeleteEntry(HT_info header_info, void *value){
                     return -1;
                 else return 0;
             }
-            blockID = *(int *)(current_block + NEXT);
         }
+        blockID = *(int *)(current_block + NEXT);
     }
     return -1;
 }

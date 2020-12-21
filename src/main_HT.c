@@ -48,13 +48,32 @@ int main(void){
     fclose(frecords);
 
     int key = 54;
-    HT_GetAllEntries(*info, &key);
-    HT_DeleteEntry(*info, &key);
+    printf("\nGet entry with ID = %d\n", key);
+    if (HT_GetAllEntries(*info, &key) == -1)
+        printf("Could not found entry\n");
 
+    key = 107;
+    printf("\nGet entry with ID = %d\n", key);
+    if (HT_GetAllEntries(*info, &key) == -1)
+        printf("Could not found entry\n");
+
+    key = 803;
+    printf("\nGet entry with ID = %d\n", key);
+    if (HT_GetAllEntries(*info, &key) == -1)
+        printf("Could not found entry\n");    
+
+    printf("\nDelete entry with ID = %d\n", key);
+    if (HT_DeleteEntry(*info, &key) == -1)
+        printf("Error! Could not delete entry\n");
+    printf("\nGet entry with ID = %d\n", key);
+    if (HT_GetAllEntries(*info, &key) == -1)
+        printf("Could not found entry\n");  
+
+    printf("\nHash Statistics:\n");
     HashStatistics("test");
     
     if (HT_CloseIndex(info) == 0)
-        printf("Closed file\n");
+        printf("\nClosed file\n");
     else printf("Error! Could not close file\n");
     
     return 0;

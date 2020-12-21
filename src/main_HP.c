@@ -57,7 +57,7 @@ int main(void){
     if (HP_GetAllEntries(*info, &key) == -1)
         printf("Could not found entry\n");
 
-    key = 4;
+    key = 803;
     printf("\nGet entry with ID = %d\n", key);
     if (HP_GetAllEntries(*info, &key) == -1)
         printf("Could not found entry\n");    
@@ -70,7 +70,7 @@ int main(void){
         printf("Could not found entry\n");    
 
     if (HP_CloseFile(info) == 0)
-        printf("Closed file\n");
+        printf("\nClosed file\n");
     else printf("Error! Could not close file\n");
 
     return 0;

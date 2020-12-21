@@ -190,7 +190,6 @@ int HP_DeleteEntry(HP_info header_info, void *value){
     blockID = *(int *)(current_block + NEXT);
 
     while (blockID != -1) { /*Scan the blocks of records*/
-
         /*Read the block with ID blockID and get the address*/
         if (BF_ReadBlock(header_info.fileDesc, blockID, &current_block) < 0){
             BF_PrintError("Error reading block");
@@ -205,27 +204,22 @@ int HP_DeleteEntry(HP_info header_info, void *value){
             void *current_key = get_key(current_rec, header_info.attrName);
 
             if (memcmp(value, current_key, header_info.attrLength) == 0){ /*Record to delete is found*/
-                /*Get the last record of current block and copy it to the record to delete*/
+                /*Get the last record of current block and copy it to the record to delete*/          
                 Record *last_rec = (current_block + (count-1)*RECORD_SIZE);
-                print_record(*last_rec);
                 memcpy(current_block + j*RECORD_SIZE, last_rec, RECORD_SIZE);
-                Record x;
-                init_record(&x, -1, "0", "0", "0");
-                memcpy(current_block +(count-1)*RECORD_SIZE, &x, RECORD_SIZE);
                 /*Decreament the number of records*/
                 count--;
                 memcpy(current_block + REC_NUM, &count, sizeof(int));
-
+                
                 if (BF_WriteBlock(header_info.fileDesc, blockID) < 0){
-                    printf("inside\n");
+                    BF_PrintError("BF write block error");
                     return -1;
                 }
                 else return 0;
-            }
-            blockID = *(int *)(current_block + NEXT);
+            }  
         }
+        blockID = *(int *)(current_block + NEXT);
     }
-    printf("at the end\n");
     return -1;
 }
 
