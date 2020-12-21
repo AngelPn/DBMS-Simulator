@@ -50,24 +50,24 @@ int main(void){
     int key = 54;
     printf("\nGet entry with ID = %d\n", key);
     if (HT_GetAllEntries(*info, &key) == -1)
-        printf("Could not found entry\n");
+        printf("Could not find entry\n");
 
     key = 107;
     printf("\nGet entry with ID = %d\n", key);
     if (HT_GetAllEntries(*info, &key) == -1)
-        printf("Could not found entry\n");
+        printf("Could not find entry\n");
 
     key = 803;
     printf("\nGet entry with ID = %d\n", key);
     if (HT_GetAllEntries(*info, &key) == -1)
-        printf("Could not found entry\n");    
+        printf("Could not find entry\n");    
 
     printf("\nDelete entry with ID = %d\n", key);
     if (HT_DeleteEntry(*info, &key) == -1)
         printf("Error! Could not delete entry\n");
     printf("\nGet entry with ID = %d\n", key);
     if (HT_GetAllEntries(*info, &key) == -1)
-        printf("Could not found entry\n");  
+        printf("Could not find entry\n");  
 
     printf("\nHash Statistics:\n");
     HashStatistics("test");
