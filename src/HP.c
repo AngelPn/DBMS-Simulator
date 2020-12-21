@@ -108,9 +108,9 @@ int HP_InsertEntry(HP_info header_info, Record record){
         count = *(int *)(current_block + REC_NUM);
 
         for (int j = 0; j < count; j++){ /*For every record in current_block, compare keys*/
-            Record current_rec = (Record)(current_block + j*RECORD_SIZE);
+            Record *current_rec = (Record *)(current_block + j*RECORD_SIZE);
             void *record_key = get_key(record, header_info.attrName);
-            void *current_key = get_key(current_rec, header_info.attrName);
+            void *current_key = get_key(*current_rec, header_info.attrName);
             if (memcmp(record_key, current_key, header_info.attrLength) == 0){
                 return -1;
             }
@@ -147,7 +147,7 @@ int HP_InsertEntry(HP_info header_info, Record record){
         if (BF_WriteBlock(header_info.fileDesc, prev_blockID) < 0)
             return -1;
         /*Add the record in new allocated block, set number of records to 1 and pointer to next block -1*/
-        memcpy(block, record, RECORD_SIZE);
+        memcpy(block, &record, RECORD_SIZE);
         count = 1;
         memcpy(block + REC_NUM, &count, sizeof(int));
         count = -1;
@@ -161,7 +161,7 @@ int HP_InsertEntry(HP_info header_info, Record record){
         }
         count++;
         memcpy(block + REC_NUM, &count, sizeof(int));
-        memcpy(block+(count-1)*RECORD_SIZE, record, RECORD_SIZE);
+        memcpy(block+(count-1)*RECORD_SIZE, &record, RECORD_SIZE);
 
         blockID = block_susID;
     }
@@ -197,12 +197,12 @@ int HP_DeleteEntry(HP_info header_info, void *value){
 
         for (int j = 0; j < count; j++){ /*For every record in current_block, compare keys*/
 
-            Record current_rec = (current_block + j*RECORD_SIZE);
-            void *current_key = get_key(current_rec, header_info.attrName);
+            Record *current_rec = (current_block + j*RECORD_SIZE);
+            void *current_key = get_key(*current_rec, header_info.attrName);
 
             if (memcmp(value, current_key, header_info.attrLength) == 0){ /*Record to delete is found*/
                 /*Get the last record of current block and copy it to the record to delete*/
-                Record last_rec = (current_block + count*RECORD_SIZE);
+                Record *last_rec = (current_block + count*RECORD_SIZE);
                 memcpy(current_block + j*RECORD_SIZE, last_rec, RECORD_SIZE);
                 /*Decreament the number of records*/
                 count--;
@@ -245,14 +245,14 @@ int HP_GetAllEntries(HP_info header_info, void *value){
 
         for (int j = 0; j < count; j++){ /*For every record in current_block, compare keys*/
 
-            Record current_rec = current_block + j*RECORD_SIZE;
-            void *current_key = get_key(current_rec, header_info.attrName);
+            Record *current_rec = current_block + j*RECORD_SIZE;
+            void *current_key = get_key(*current_rec, header_info.attrName);
 
             if (value == NULL){  /*if value is null print every entry*/
-                print_record(current_rec);
+                print_record(*current_rec);
             } 
             else if (memcmp(value, current_key, header_info.attrLength) == 0){ /*Record to print is found*/
-                print_record(current_rec);
+                print_record(*current_rec);
                 return block_counter;
             }
         }

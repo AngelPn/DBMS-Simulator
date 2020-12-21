@@ -38,11 +38,11 @@ int main(void){
     Record x;
  
     while(fscanf(frecords, "{%d,\"%[^\",\"]\",\"%[^\",\"]\",\"%[^\"]\"}\n", &id, name, surname, address) != EOF){
-        x = create_record(id, name, surname, address);
+        init_record(&x, id, name, surname, address);
+
         if (HP_InsertEntry(*info, x)==-1){
             printf("Record with id: %d could not entry\n", id);
         }
-        free_record(x);
     }
 
     fclose(frecords);
