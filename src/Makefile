@@ -10,9 +10,9 @@ CC = gcc
 #compile options
 CFLAGS = -Wall -g -I$(IDIR)
 VALFLAGS = --leak-check=full --show-leak-kinds=all --track-origins=yes
-TARGETS = main_HP main_HT
+TARGETS = main_HP main_HT main_SHT
 
-_DEPS = BF.h HP.h HT.h Record.h
+_DEPS = BF.h HP.h HT.h SHT.h Record.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
 LIBS = $(LDIR)/BF_64.a
@@ -22,6 +22,9 @@ HPOBJS = $(patsubst %,$(ODIR)/%,$(_HPOBJS))
 
 _HTOBJS = main_HT.o HT.o Record.o
 HTOBJS = $(patsubst %,$(ODIR)/%,$(_HTOBJS))
+
+_SHTOBJS = main_SHT.o HT.o SHT.o Record.o
+SHTOBJS = $(patsubst %,$(ODIR)/%,$(_SHTOBJS))
 
 #dir_guard=$(shell [ ! -d $(@D) ] && mkdir -p $(@D)) #if dir exists dont make a new one
 
@@ -39,6 +42,10 @@ main_HP: $(HPOBJS)
 	$(CC) -o $(BDIR)/$@ $^ -no-pie $(LIBS)
 
 main_HT: $(HTOBJS)
+	@mkdir -p $(BDIR)
+	$(CC) -o $(BDIR)/$@ $^ -no-pie $(LIBS)
+
+main_SHT: $(SHTOBJS)
 	@mkdir -p $(BDIR)
 	$(CC) -o $(BDIR)/$@ $^ -no-pie $(LIBS)
 
