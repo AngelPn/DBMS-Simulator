@@ -1,0 +1,7 @@
+*.o
+build/
+bin/
+test
+test2
+.vscode/
+secondary_test

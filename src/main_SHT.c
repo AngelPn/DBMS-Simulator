@@ -65,7 +65,6 @@ int main(void){
         if ((blockID = HT_InsertEntry(*ht_info, x))==-1){
             printf("Record with id: %d could not entry Hash File\n", id);
         }
-
         
         // SecondaryRecord srec = {.record.id = x.id,
         //                         .record.name = x.name,
@@ -82,5 +81,23 @@ int main(void){
 
     fclose(frecords);
 
+    char key[25];
+    strcpy(key,"surname_54");
+    printf("\nGet entry with = %s\n", key);
+    if (SHT_SecondaryGetAllEntries(*sht_info,*ht_info, &key) == -1)
+        printf("Could not find entry\n");
+
+    strcpy(key,"surname_107");
+    printf("\nGet entry with = %s\n", key);
+    if (SHT_SecondaryGetAllEntries(*sht_info,*ht_info, &key) == -1)
+        printf("Could not find entry\n");
+
+    strcpy(key,"surname_503");
+    printf("\nGet entry with = %s\n", key);
+    if (SHT_SecondaryGetAllEntries(*sht_info,*ht_info, &key) == -1)
+        printf("Could not find entry\n");    
+
+    SHT_CloseSecondaryIndex(sht_info);
+    HT_CloseIndex(ht_info);
     return 0;
 }

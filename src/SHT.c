@@ -8,7 +8,7 @@
 
 #define NEXT_BUCKET BLOCK_SIZE-sizeof(int)
 #define NEXT        BLOCK_SIZE-2*sizeof(int)
-#define SEC_REC_NUM     BLOCK_SIZE-sizeof(int)
+#define REC_NUM     BLOCK_SIZE-sizeof(int)
 
 int SHT_CreateSecondaryIndex( char *sfileName, char* attrName,int attrLength, int buckets, char *fileName){
     /*Create file in block - level*/
@@ -192,7 +192,7 @@ int SHT_SecondaryInsertEntry( SHT_info header_info, SecondaryRecord record){
             return -1;
         }
         /*Get the number of SecondaryRecords of current_block and store it to count variable*/
-        count = *(int *)(current_block + SEC_REC_NUM);
+        count = *(int *)(current_block + REC_NUM);
 
         for (int j = 0; j < count; j++){ /*For every SecondaryRecord in current_block, compare keys*/
             SecondaryRecord *current_rec = (SecondaryRecord *)(current_block + j*(sizeof(SecondaryRecord)));
@@ -234,12 +234,14 @@ int SHT_SecondaryInsertEntry( SHT_info header_info, SecondaryRecord record){
         /*If previous block is block of buckets, index is the bucket index*/
         /*If previous block is block of SecondaryRecords, index is NEXT*/
         memcpy(prev_block + index, &blockID, sizeof(int));
-        if (BF_WriteBlock(header_info.fileDesc, prev_blockID) < 0)
+        if (BF_WriteBlock(header_info.fileDesc, prev_blockID) < 0){
+            BF_PrintError("Error writing block");
             return -1;
+        }
         /*Add the record in new allocated block, set number of records to 1 and pointer to next block -1*/
         memcpy(block, &record, sizeof(SecondaryRecord));
         count = 1;
-        memcpy(block + SEC_REC_NUM, &count, sizeof(int));
+        memcpy(block + REC_NUM, &count, sizeof(int));
         count = -1;
         memcpy(block + NEXT, &count, sizeof(int));
     }
@@ -250,15 +252,104 @@ int SHT_SecondaryInsertEntry( SHT_info header_info, SecondaryRecord record){
             return -1;
         }
         count++;
-        memcpy(block + SEC_REC_NUM, &count, sizeof(int));
-        memcpy(block+(count-1)*RECORD_SIZE, &record, RECORD_SIZE);
+        memcpy(block + REC_NUM, &count, sizeof(int));
+        memcpy(block+(count-1)*sizeof(SecondaryRecord), &record, sizeof(SecondaryRecord));
+
+        blockID = block_susID;
     }
     /*Return the ID of block that record has inserted*/
-    if (BF_WriteBlock(header_info.fileDesc, blockID) < 0)
+    if (BF_WriteBlock(header_info.fileDesc, blockID) < 0){
+        BF_PrintError("Error writing block");
         return -1;
+    }
     return 0;
 }
 
 int SHT_SecondaryGetAllEntries(SHT_info header_info_sht, HT_info header_info_ht, void *value){
+    if (value == NULL){  /*if value is null print every entry*/ 
+        return HT_GetAllEntries(header_info_ht, NULL);
+    } 
+    int index = sht_hash(header_info_sht.numBuckets, value);
+     
+    /*File parsing*/
+    void *header_block = NULL;
+    if (BF_ReadBlock(header_info_sht.fileDesc, header_info_sht.header_block_ID, &header_block) < 0){
+        BF_PrintError("Error reading block");
+        return -1;
+    }
+    
+    int flag = 0;
+    int blockID_bucket = *(int *)(header_block + NEXT_BUCKET);
+    void *bucket_block  = NULL;
+    int n_buckets = (BLOCK_SIZE-sizeof(int))/sizeof(int);
+    int bucket_index = -1;
+    int i;
+    int block_counter = 0;
 
+    while (blockID_bucket != -1){ /*For every block of buckets in secondary*/
+
+        /*Read the block of buckets with blockID_bucket and get the address*/
+        if (BF_ReadBlock(header_info_sht.fileDesc, blockID_bucket, &bucket_block) < 0){
+            BF_PrintError("Error reading block");
+            return -1;
+        }
+        
+        for (i = 0; i < n_buckets ; i++){ /*For every bucket in block of buckets*/
+            bucket_index++;
+            if (index == bucket_index) break;
+        }
+        if (index == bucket_index){
+            index = i*sizeof(int);
+            break;
+        }
+        blockID_bucket = *(int *)(bucket_block + NEXT_BUCKET);
+    }
+
+    int blockID = *(int *)(bucket_block + index); /*ID of block of secondary records*/
+
+    int count = 0;
+    void *current_block = NULL;
+
+    while (blockID != -1) { /*Scan the blocks of secondary records*/
+
+        /*Read the block with ID blockID and get the address*/
+        if (BF_ReadBlock(header_info_sht.fileDesc, blockID, &current_block) < 0){
+            BF_PrintError("Error reading block");
+            return -1;
+        }
+        block_counter++;
+        /*Get the number of records of current_block and store it to count variable*/
+        count = *(int *)(current_block + REC_NUM);
+
+        for (int j = 0; j < count; j++){ /*For every secondary record in current_block, compare keys*/
+            SecondaryRecord *current_rec = (SecondaryRecord *)(current_block + j*sizeof(SecondaryRecord));
+            void *current_key = get_key(&(current_rec->record), header_info_sht.attrName); //surname
+            // printf("current key %s\n", (char *)current_key);
+            if (strncmp((char *)value, (char *)current_key, 25) == 0){ /*Record to print is found*/
+                
+                void *ht_block;
+                if (BF_ReadBlock(header_info_ht.fileDesc, current_rec->blockId, &ht_block) < 0){
+                    BF_PrintError("Error reading block");
+                    return -1;
+                }
+                block_counter++;
+                /*Get the number of records of current_block and store it to count variable*/
+                int ht_count = *(int *)(ht_block + REC_NUM);
+                for (int j = 0; j < ht_count; j++){ /*For every record in current_block, compare keys*/
+
+                    Record *current_ht_rec = ht_block + j*RECORD_SIZE;
+                    void *current_ht_key = get_key(current_ht_rec, header_info_sht.attrName);
+                    if (strncmp((char *)value, (char *)current_ht_key, header_info_sht.attrLength) == 0){ /*Record to print is found*/
+                        print_record(*current_ht_rec);
+                        flag = 1;
+                    }
+                }
+            }
+        }
+        blockID = *(int *)(current_block + NEXT);
+    }
+    if (flag == 1)
+        return block_counter;
+    else
+        return -1;
 }
