@@ -144,7 +144,6 @@ int SHT_SecondaryInsertEntry( SHT_info header_info, SecondaryRecord record){
 
     void *key = get_key(&record.record, header_info.attrName);
     int index = sht_hash(header_info.numBuckets, key);
-    printf("index = %d\n", index);
 
     /*File parsing*/
     void *header_block = NULL;

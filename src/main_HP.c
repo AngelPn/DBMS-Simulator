@@ -36,7 +36,7 @@ int main(void){
     char surname[25];
     char address[50];
     Record x;
- 
+
     while(fscanf(frecords, "{%d,\"%[^\",\"]\",\"%[^\",\"]\",\"%[^\"]\"}\n", &id, name, surname, address) != EOF){
         init_record(&x, id, name, surname, address);
 

@@ -1,7 +1,7 @@
 #ifndef RECORD_H
 #define RECORD_H
 
-#define RECORD_SIZE 94
+#define RECORD_SIZE sizeof(Record)
 
 typedef struct record
 {

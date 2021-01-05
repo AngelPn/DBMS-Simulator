@@ -37,17 +37,21 @@ int main(void){
     char surname[25];
     char address[50];
     Record x;
-
+    int flag = 0;
     while(fscanf(frecords, "{%d,\"%[^\",\"]\",\"%[^\",\"]\",\"%[^\"]\"}\n", &id, name, surname, address) != EOF){
         init_record(&x, id, name, surname, address);
         if (HT_InsertEntry(*info, x)==-1){
             printf("Record with id: %d could not entry\n", id);
         }
+        if (flag++ == 18) break;
     }
 
     fclose(frecords);
 
-    int key = 54;
+    if (HT_GetAllEntries(*info, NULL) == -1)
+        printf("Could not find entry\n");
+
+    int key = 21;
     printf("\nGet entry with ID = %d\n", key);
     if (HT_GetAllEntries(*info, &key) == -1)
         printf("Could not find entry\n");
