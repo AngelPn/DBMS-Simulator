@@ -23,6 +23,12 @@ typedef struct
     int blockId;
 } SecondaryRecord;
 
+typedef struct
+{
+    char surname[25];
+    int blockId;
+} SHTrecord;
+
 
 int SHT_CreateSecondaryIndex( char *sfileName, char* attrName, int attrLength, int buckets, char *fileName);
 

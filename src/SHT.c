@@ -144,6 +144,7 @@ int SHT_SecondaryInsertEntry( SHT_info header_info, SecondaryRecord record){
 
     void *key = get_key(&record.record, header_info.attrName);
     int index = sht_hash(header_info.numBuckets, key);
+    printf("index = %d\n", index);
 
     /*File parsing*/
     void *header_block = NULL;
@@ -180,36 +181,39 @@ int SHT_SecondaryInsertEntry( SHT_info header_info, SecondaryRecord record){
     int count = 0;
     int block_susID = -1, prev_blockID = blockID_bucket;
 
-    int blockID = *(int *)(bucket_block + index); /*ID of block of records*/
+    int blockID = *(int *)(bucket_block + index); /*ID of block of SHTrecords*/
 
     void *current_block = NULL;
 
-    while (blockID != -1) {  /*Scan the blocks of SecondaryRecords: do not insert a record that already exists*/
+    while (blockID != -1) {  /*Scan the blocks of SHTrecords: do not insert a record that already exists*/
 
         /*Read the block with ID blockID and get the address*/
         if (BF_ReadBlock(header_info.fileDesc, blockID, &current_block) < 0){
             BF_PrintError("Error reading block");
             return -1;
         }
-        /*Get the number of SecondaryRecords of current_block and store it to count variable*/
+        /*Get the number of SHTrecords of current_block and store it to count variable*/
         count = *(int *)(current_block + REC_NUM);
 
-        for (int j = 0; j < count; j++){ /*For every SecondaryRecord in current_block, compare keys*/
-            SecondaryRecord *current_rec = (SecondaryRecord *)(current_block + j*(sizeof(SecondaryRecord)));
+        for (int j = 0; j < count; j++){ /*For every SHTrecord in current_block, compare keys*/
+            SHTrecord *current_rec = (SHTrecord *)(current_block + j*(sizeof(SHTrecord)));
             void *record_key = get_key(&record.record, header_info.attrName); //surname
-            void *current_key = get_key(&(current_rec->record), header_info.attrName);
+            void *current_key = current_rec->surname;
             if (memcmp(record_key, current_key, header_info.attrLength) == 0 && record.blockId == current_rec->blockId){
                 return 0;
             }
         }
         /*If there is empty space in block for SecondaryRecord, store the ID of block in block_susID*/
-        if (count < BLOCK_SIZE/sizeof(SecondaryRecord)){
+        if (count < (BLOCK_SIZE - 2*sizeof(int))/sizeof(SHTrecord)){
             block_susID = blockID;
         }
         prev_blockID = blockID;
         blockID = *(int *)(current_block + NEXT);
         index = NEXT;
     }
+    /*Create SHTrecord: struct of surname and blockId*/
+    SHTrecord rec = {.blockId = record.blockId};
+    strcpy(rec.surname, record.record.surname);
 
     if (block_susID == -1){ /*If all previous blocks are full*/
         if (BF_AllocateBlock(header_info.fileDesc) < 0){
@@ -232,14 +236,14 @@ int SHT_SecondaryInsertEntry( SHT_info header_info, SecondaryRecord record){
         }
         /*Make previous block point to new allocated block*/
         /*If previous block is block of buckets, index is the bucket index*/
-        /*If previous block is block of SecondaryRecords, index is NEXT*/
+        /*If previous block is block of SHTrecords, index is NEXT*/
         memcpy(prev_block + index, &blockID, sizeof(int));
         if (BF_WriteBlock(header_info.fileDesc, prev_blockID) < 0){
             BF_PrintError("Error writing block");
             return -1;
         }
         /*Add the record in new allocated block, set number of records to 1 and pointer to next block -1*/
-        memcpy(block, &record, sizeof(SecondaryRecord));
+        memcpy(block, &rec, sizeof(SHTrecord));
         count = 1;
         memcpy(block + REC_NUM, &count, sizeof(int));
         count = -1;
@@ -253,7 +257,7 @@ int SHT_SecondaryInsertEntry( SHT_info header_info, SecondaryRecord record){
         }
         count++;
         memcpy(block + REC_NUM, &count, sizeof(int));
-        memcpy(block+(count-1)*sizeof(SecondaryRecord), &record, sizeof(SecondaryRecord));
+        memcpy(block+(count-1)*sizeof(SHTrecord), &rec, sizeof(SHTrecord));
 
         blockID = block_susID;
     }
@@ -322,8 +326,8 @@ int SHT_SecondaryGetAllEntries(SHT_info header_info_sht, HT_info header_info_ht,
         count = *(int *)(current_block + REC_NUM);
 
         for (int j = 0; j < count; j++){ /*For every secondary record in current_block, compare keys*/
-            SecondaryRecord *current_rec = (SecondaryRecord *)(current_block + j*sizeof(SecondaryRecord));
-            void *current_key = get_key(&(current_rec->record), header_info_sht.attrName); //surname
+            SHTrecord *current_rec = (SHTrecord *)(current_block + j*sizeof(SHTrecord));
+            void *current_key = current_rec->surname; //surname
             // printf("current key %s\n", (char *)current_key);
             if (strncmp((char *)value, (char *)current_key, 25) == 0){ /*Record to print is found*/
                 
