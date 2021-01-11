@@ -349,6 +349,10 @@ int SHT_SecondaryGetAllEntries(SHT_info header_info_sht, HT_info header_info_ht,
                 }
             }
         }
+        if (BF_ReadBlock(header_info_sht.fileDesc, blockID, &current_block) < 0){
+            BF_PrintError("Error reading block");
+            return -1;
+        }
         blockID = *(int *)(current_block + NEXT);
     }
     if (flag == 1)

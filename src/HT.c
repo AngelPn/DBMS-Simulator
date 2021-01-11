@@ -395,6 +395,11 @@ int HT_GetAllEntries(HT_info header_info, void *value){
                     blockID = *(int *)(current_block + NEXT);
                 }
             }
+            //FIXME get the address of blockID_bucket
+            if (BF_ReadBlock(header_info.fileDesc, blockID_bucket, &bucket_block) < 0){ /**/
+                BF_PrintError("Error reading block");
+                return -1;
+            }
             blockID_bucket = *(int *)(bucket_block + NEXT_BUCKET);
         }
         return block_counter;
