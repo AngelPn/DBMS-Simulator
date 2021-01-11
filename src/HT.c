@@ -356,7 +356,6 @@ int HT_GetAllEntries(HT_info header_info, void *value){
 
         int block_counter = 0;
         for (int i = 1; i <= n_bucket_blocks; i++){ /*For every block of buckets*/
-            printf("block of buckets #%d", i);
 
             int n_buckets;
             if (i == n_bucket_blocks && remainder > 0)
@@ -367,13 +366,12 @@ int HT_GetAllEntries(HT_info header_info, void *value){
             int blockID;
             void *current_block = NULL;
             for (int j = 0; j < n_buckets; j++) { /*For every bucket in block of buckets*/
-                //FIXME get the address of blockID_bucket
+                // Get the address of blockID_bucket
                 if (BF_ReadBlock(header_info.fileDesc, blockID_bucket, &bucket_block) < 0){ /**/
                     BF_PrintError("Error reading block");
                     return -1;
                 }
 
-                printf("bucket #%d\n", j);
                 int count = 0;
                 blockID = *(int *)(bucket_block + j*sizeof(int)); /*ID of bucket's block of records*/
 
@@ -385,17 +383,15 @@ int HT_GetAllEntries(HT_info header_info, void *value){
                     }
                     block_counter++;
                     count = *(int *)(current_block + REC_NUM);
-                    printf("count = %d", count);
 
                     for (int k = 0; k < count; k++){ /*For every record in current_block, print record*/
                         Record *current_rec = current_block + k*RECORD_SIZE;
-                        printf("HERE count=%d\n", count);
                         print_record(*current_rec);       
                     }
                     blockID = *(int *)(current_block + NEXT);
                 }
             }
-            //FIXME get the address of blockID_bucket
+            // get the address of blockID_bucket
             if (BF_ReadBlock(header_info.fileDesc, blockID_bucket, &bucket_block) < 0){ /**/
                 BF_PrintError("Error reading block");
                 return -1;
@@ -508,12 +504,14 @@ int HashStatistics(char *filename){
             
             bucket_index++;
             overflow_blocks = 0;
-            int count = 0;
+            
             if (BF_ReadBlock(info->fileDesc, blockID_bucket, &bucket_block) < 0){
                 BF_PrintError("Error reading block");
                 return -1;
             }
-            blockID = *(int *)(bucket_block + (j%n_bucket_blocks)*sizeof(int));
+
+            int count = 0;
+            blockID = *(int *)(bucket_block + j*sizeof(int)); /*ID of bucket's block of records*/
 
             while (blockID != -1) { /*for every block of records in bucket*/
 
@@ -539,6 +537,11 @@ int HashStatistics(char *filename){
                 overflow_buckets++;
                 printf("Bucket %d has %d overflow blocks.\n", bucket_index, overflow_blocks-1);
             }
+        }
+        // get the address of blockID_bucket
+        if (BF_ReadBlock(info->fileDesc, blockID_bucket, &bucket_block) < 0){ /**/
+            BF_PrintError("Error reading block");
+            return -1;
         }
         blockID_bucket = *(int *)(bucket_block + NEXT_BUCKET);
     }

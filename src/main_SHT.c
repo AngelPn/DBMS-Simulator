@@ -46,7 +46,7 @@ int main(void){
 
     FILE *frecords;
     /*Open the file "records1K.txt" and read it*/
-    frecords = fopen("../examples/records15K.txt","r");
+    frecords = fopen("../examples/records1K.txt","r");
     if (frecords == NULL){
         printf("Error: fopen() failed\n");
         exit(EXIT_FAILURE);
@@ -80,29 +80,32 @@ int main(void){
     }
 
     fclose(frecords);
-    if (HT_GetAllEntries(*ht_info, NULL) == -1)
-        printf("Could not find entry\n");
+    // if (HT_GetAllEntries(*ht_info, NULL) == -1)
+    //     printf("Could not find entry\n");
 
     char key[25];
-    strcpy(key,"surname_54");
+    strcpy(key,"surname_2");
     printf("\nGet entry with = %s\n", key);
     if (SHT_SecondaryGetAllEntries(*sht_info,*ht_info, &key) == -1)
         printf("Could not find entry\n");
 
-    strcpy(key,"surname_107");
+    strcpy(key,"surname_7");
     printf("\nGet entry with = %s\n", key);
     if (SHT_SecondaryGetAllEntries(*sht_info,*ht_info, &key) == -1)
         printf("Could not find entry\n");
 
-    strcpy(key,"surname_503");
+    strcpy(key,"surname_14");
     printf("\nGet entry with = %s\n", key);
     if (SHT_SecondaryGetAllEntries(*sht_info,*ht_info, &key) == -1)
         printf("Could not find entry\n");    
 
-    strcpy(key,"surname_9108");
+    strcpy(key,"surname_10");
     printf("\nGet entry with = %s\n", key);
     if (SHT_SecondaryGetAllEntries(*sht_info,*ht_info, &key) == -1)
         printf("Could not find entry\n"); 
+
+    printf("\nGet statistics of SHT file\n");
+    SHT_HashStatistics("secondary_test");
 
     SHT_CloseSecondaryIndex(sht_info);
     HT_CloseIndex(ht_info);
