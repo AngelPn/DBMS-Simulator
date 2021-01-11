@@ -7,7 +7,7 @@
 
 int main(void){
 
-    if (HT_CreateIndex("test", 'i', "id", sizeof(int), 150) == 0)
+    if (HT_CreateIndex("test", 'i', "id", sizeof(int), 409) == 0)
         printf("Created file\n");
     else printf("Error! Could not create file\n");
 
@@ -25,7 +25,7 @@ int main(void){
 
     FILE *frecords;
     /*Open the file "records1K.txt" and read it*/
-    frecords = fopen("../examples/records1K.txt","r");
+    frecords = fopen("../examples/records15K.txt","r");
     if (frecords == NULL){
         printf("Error: fopen() failed\n");
         exit(EXIT_FAILURE);
@@ -63,6 +63,16 @@ int main(void){
     printf("\nGet entry with ID = %d\n", key);
     if (HT_GetAllEntries(*info, &key) == -1)
         printf("Could not find entry\n");    
+
+    key = 8003;
+    printf("\nGet entry with ID = %d\n", key);
+    if (HT_GetAllEntries(*info, &key) == -1)
+        printf("Could not find entry\n"); 
+
+    key = 13078;
+    printf("\nGet entry with ID = %d\n", key);
+    if (HT_GetAllEntries(*info, &key) == -1)
+        printf("Could not find entry\n"); 
 
     printf("\nDelete entry with ID = %d\n", key);
     if (HT_DeleteEntry(*info, &key) == -1)

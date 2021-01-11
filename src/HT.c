@@ -491,11 +491,6 @@ int HashStatistics(char *filename){
     int bucket_index = 0;
     for (int i = 1; i <= n_bucket_blocks; i++){ /*For every block of buckets*/
         
-        if (BF_ReadBlock(info->fileDesc, blockID_bucket, &bucket_block) < 0){
-            BF_PrintError("Error reading block");
-            return -1;
-        }
-
         int n_buckets;
         if (i == n_bucket_blocks && remainder > 0)
             n_buckets = remainder/sizeof(int);
@@ -509,6 +504,10 @@ int HashStatistics(char *filename){
             bucket_index++;
             overflow_blocks = 0;
             int count = 0;
+            if (BF_ReadBlock(info->fileDesc, blockID_bucket, &bucket_block) < 0){
+                BF_PrintError("Error reading block");
+                return -1;
+            }
             blockID = *(int *)(bucket_block + (j%n_bucket_blocks)*sizeof(int));
 
             while (blockID != -1) { /*for every block of records in bucket*/
