@@ -357,10 +357,6 @@ int HT_GetAllEntries(HT_info header_info, void *value){
         int block_counter = 0;
         for (int i = 1; i <= n_bucket_blocks; i++){ /*For every block of buckets*/
             printf("block of buckets #%d", i);
-            if (BF_ReadBlock(header_info.fileDesc, blockID_bucket, &bucket_block) < 0){
-                BF_PrintError("Error reading block");
-                return -1;
-            }
 
             int n_buckets;
             if (i == n_bucket_blocks && remainder > 0)
@@ -371,6 +367,12 @@ int HT_GetAllEntries(HT_info header_info, void *value){
             int blockID;
             void *current_block = NULL;
             for (int j = 0; j < n_buckets; j++) { /*For every bucket in block of buckets*/
+                //FIXME get the address of blockID_bucket
+                if (BF_ReadBlock(header_info.fileDesc, blockID_bucket, &bucket_block) < 0){ /**/
+                    BF_PrintError("Error reading block");
+                    return -1;
+                }
+
                 printf("bucket #%d\n", j);
                 int count = 0;
                 blockID = *(int *)(bucket_block + j*sizeof(int)); /*ID of bucket's block of records*/
@@ -446,7 +448,6 @@ int HT_GetAllEntries(HT_info header_info, void *value){
 
                 Record *current_rec = current_block + j*RECORD_SIZE;
                 void *current_key = get_key(current_rec, header_info.attrName);
-                print_record(*current_rec);
                 if (memcmp(value, current_key, header_info.attrLength) == 0){ /*Record to print is found*/
                     print_record(*current_rec);
                     return block_counter;

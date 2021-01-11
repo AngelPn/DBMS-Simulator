@@ -60,7 +60,6 @@ int main(void){
     Record x;
 
     int blockID;
-    int flag = 0;
     while(fscanf(frecords, "{%d,\"%[^\",\"]\",\"%[^\",\"]\",\"%[^\"]\"}\n", &id, name, surname, address) != EOF){
         init_record(&x, id, name, surname, address);
         if ((blockID = HT_InsertEntry(*ht_info, x))==-1){
@@ -78,7 +77,6 @@ int main(void){
         if(SHT_SecondaryInsertEntry(*sht_info, srec) == -1){
             printf("Record with surname: %s could not entry Secondary Hash File\n", x.surname);
         }
-        if (flag++ == 20) break;
     }
 
     fclose(frecords);
