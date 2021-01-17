@@ -6,6 +6,7 @@
 #include "../include/SHT.h"
 #include "../include/BF.h"
 
+#define BASE (256)
 #define NEXT_BUCKET BLOCK_SIZE-sizeof(int)
 #define NEXT        BLOCK_SIZE-2*sizeof(int)
 #define REC_NUM     BLOCK_SIZE-sizeof(int)
@@ -133,16 +134,21 @@ int SHT_CloseSecondaryIndex( SHT_info* header_info){
 int sht_hash(long int nbuckets, void *key){
     char *k = (char *)key;
 
-    const int p = 37;
-    const int m = 1e9 + 9;
-    long long hash_value = 0;
-    long long p_pow = 1;
-    for (int i = 0; i < strlen(k); i++){
-        char c = k[i];
-        hash_value = (hash_value + (c - 'a' + 1) * p_pow) % m;
-        p_pow = (p_pow * p) % m;
+    unsigned long h;
+    unsigned const char *us;
+
+    /* cast s to unsigned const char * */
+    /* this ensures that elements of s will be treated as having values >= 0 */
+    us = (unsigned const char *)k;
+
+    /* Treat strings as base-256 integers with digits in the range 1 to 255*/
+    h = 0;
+    while (*us != '\0'){
+        h = (h * BASE + *us) % nbuckets;
+        us++;
     }
-    return abs(hash_value%nbuckets);
+
+    return h;
 }
 
 int SHT_SecondaryInsertEntry( SHT_info header_info, SecondaryRecord record){
