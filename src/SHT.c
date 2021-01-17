@@ -148,7 +148,7 @@ int sht_hash(long int nbuckets, void *key){
         us++;
     }
 
-    return h;
+    return h % nbuckets;
 }
 
 int SHT_SecondaryInsertEntry( SHT_info header_info, SecondaryRecord record){
