@@ -130,26 +130,9 @@ int SHT_CloseSecondaryIndex( SHT_info* header_info){
     return 0;
 }
 
-int rol(int result, int value) {
-    return (result << value) | (result >> (sizeof(int)*8 - value));
-}
-
 int sht_hash(long int nbuckets, void *key){
     char *k = (char *)key;
 
-    // int hashing = 0;
-    // for (int i=0; i< strlen(key); i++){
-    //     hashing += k[i];
-    // }
-    // return hashing%nbuckets;
-
-    // int result = 0x55555555;
-
-    // while (*k) { 
-    //     result ^= *k++;
-    //     result = rol(result, 5);
-    // }
-    // return result;
     const int p = 37;
     const int m = 1e9 + 9;
     long long hash_value = 0;
@@ -384,102 +367,3 @@ int SHT_SecondaryGetAllEntries(SHT_info header_info_sht, HT_info header_info_ht,
         return -1;
 }
 
-int SHT_HashStatistics(char *filename){
-
-    SHT_info *info  = SHT_OpenSecondaryIndex(filename);
-
-     /*How many blocks has the file*/
-    int nblocks = BF_GetBlockCounter(info->fileDesc);
-
-    int min_recs = 0, max_recs = -1;
-    int total_recs = 0, total_blocks_bucket = 0;
-    int overflow_buckets = 0, overflow_blocks;
-
-    /*File parsing*/
-    void *header_block = NULL;
-    if (BF_ReadBlock(info->fileDesc, info->header_block_ID, &header_block) < 0){
-        BF_PrintError("Error reading block");
-        return -1;
-    }
-
-    int blockID_bucket = *(int *)(header_block + NEXT_BUCKET);
-    void *bucket_block  = NULL;
-
-    /* Calculate the number of blocks of buckets and the remainder*/
-    int n_bucket_blocks = info->numBuckets*sizeof(int)/(BLOCK_SIZE-sizeof(int));
-    int remainder = (info->numBuckets*sizeof(int))%(BLOCK_SIZE-sizeof(int));
-    if (remainder > 0)
-        n_bucket_blocks++;
-
-    int bucket_index = 0;
-    for (int i = 1; i <= n_bucket_blocks; i++){ /*For every block of buckets*/
-        
-        int n_buckets;
-        if (i == n_bucket_blocks && remainder > 0)
-            n_buckets = remainder/sizeof(int);
-        else
-            n_buckets = (BLOCK_SIZE-sizeof(int))/sizeof(int);
-
-        int blockID;
-        void *current_block = NULL;
-        for (int j = 0; j < n_buckets; j++) { /*For every bucket in block of buckets*/
-            
-            bucket_index++;
-            overflow_blocks = 0;
-            
-            if (BF_ReadBlock(info->fileDesc, blockID_bucket, &bucket_block) < 0){
-                BF_PrintError("Error reading block");
-                return -1;
-            }
-
-            int count = 0;
-            blockID = *(int *)(bucket_block + j*sizeof(int)); /*ID of bucket's block of records*/
-
-            while (blockID != -1) { /*for every block of records in bucket*/
-
-                total_blocks_bucket++;
-                overflow_blocks++;
-                if (BF_ReadBlock(info->fileDesc, blockID, &current_block) < 0){
-                    BF_PrintError("Error reading block");
-                    return -1;
-                }
-                count += *(int *)(current_block + REC_NUM);
-
-                blockID = *(int *)(current_block + NEXT);
-            }
-            if (i == 1 && j == 0) /*Initialize min_recs*/
-                min_recs = count;
-            if (count < min_recs)
-                min_recs = count;
-            if (count > max_recs)
-                max_recs = count;
-            total_recs += count;
-
-            if (overflow_blocks > 1){
-                overflow_buckets++;
-                printf("Bucket %d has %d overflow blocks.\n", bucket_index, overflow_blocks-1);
-            }
-        }
-        // get the address of blockID_bucket
-        if (BF_ReadBlock(info->fileDesc, blockID_bucket, &bucket_block) < 0){ /**/
-            BF_PrintError("Error reading block");
-            return -1;
-        }
-        blockID_bucket = *(int *)(bucket_block + NEXT_BUCKET);
-    }
-    printf("Number of blocks in file %d.\n", nblocks);
-
-    float average_recs = (float)total_recs / (float)info->numBuckets; /*b*/
-    printf("Minimum number of records in bucket is %d.\n", min_recs);
-    printf("Maximum number of records in bucket is %d.\n", max_recs);
-    printf("Average number of records in bucket is %f.\n", average_recs);
-
-    float average_blocks_bucket = (float)total_blocks_bucket/ (float)info->numBuckets; /*c*/
-    printf("Average number of blocks in a bucket %f.\n", average_blocks_bucket);
-
-    printf("%d buckets have overflow blocks.\n", overflow_buckets);
-    
-    free(info);
-
-    return 0;
-}

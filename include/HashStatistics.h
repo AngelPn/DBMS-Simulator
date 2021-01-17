@@ -1,0 +1,1 @@
+int HashStatistics(char *filename);

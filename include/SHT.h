@@ -40,5 +40,4 @@ int SHT_SecondaryInsertEntry( SHT_info header_info, SecondaryRecord record);
 
 int SHT_SecondaryGetAllEntries(SHT_info header_info_sht, HT_info header_info_ht, void *value);
 
-int SHT_HashStatistics(char *filename);
 #endif /*SHT_H*/

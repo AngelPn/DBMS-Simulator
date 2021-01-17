@@ -5,6 +5,7 @@
 #include "../include/HT.h"
 #include "../include/SHT.h"
 #include "../include/Record.h"
+#include "../include/HashStatistics.h"
 
 int main(void){
 
@@ -105,7 +106,7 @@ int main(void){
         printf("Could not find entry\n"); 
 
     printf("\nGet statistics of SHT file\n");
-    SHT_HashStatistics("secondary_test");
+    HashStatistics("secondary_test");
 
     SHT_CloseSecondaryIndex(sht_info);
     HT_CloseIndex(ht_info);

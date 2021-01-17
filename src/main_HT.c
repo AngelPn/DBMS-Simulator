@@ -4,6 +4,7 @@
 
 #include "../include/HT.h"
 #include "../include/Record.h"
+#include "../include/HashStatistics.h"
 
 int main(void){
 
@@ -25,7 +26,7 @@ int main(void){
 
     FILE *frecords;
     /*Open the file "records1K.txt" and read it*/
-    frecords = fopen("../examples/records15K.txt","r");
+    frecords = fopen("../examples/records5K.txt","r");
     if (frecords == NULL){
         printf("Error: fopen() failed\n");
         exit(EXIT_FAILURE);
