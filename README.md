@@ -5,19 +5,19 @@ A Simulation model of Database Management System in block-level and record-level
 
 Assignment in the course "Implementation of Database Systems" at DIT - UoA. It's purpose is to implement functions that manage files created on an organizational basis of Heap Files and Hash Table Files (primary and secondary). The implementation of these functions is done above the block level that is given as a library. The implemented functions concers the creation/opening/closing of a file, the insertion/deletion of an entry (record) and the printing of records.
 
-### Records
+###### Records
 
 The Heap/Hash Table files contains records of type [`Record`](https://github.com/AngelPn/DBMS-Simulator/blob/main/include/Record.h).
 
-### Heap File
+###### Heap File
 
 The management of heap file is done through the functions with prefix HP_.
 
-### Hash Table File
+###### Hash Table File
 
 The management of hash table is done through the functions with prefix HT_. It is about a static hashing using the `ID` of record as key.
 
-### Secondary Hash Table
+###### Secondary Hash Table
 
 The management of secondary hash table is done through the functions with prefix SHT_. It is about a secondary static hash table using the `surname` of record as key.
 
